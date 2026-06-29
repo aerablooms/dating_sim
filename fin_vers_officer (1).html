@@ -1,0 +1,4137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OfficeOps: Workstation Simulator v4.3 - AUDIO EDITION</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* --- [PREVIOUS CSS REMAINS THE SAME] --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+--bg:        #0a0c14;
+--panel:     #111625;
+--card:      #0d1a33;
+--accent:    #e94560;
+--accent2:   #f5a623;
+--accent3:   #00d4aa;
+--accent4:   #7c5cbf;
+--ink:       #eaeaea;
+--ink-dim:   #8892a4;
+--border:    2px solid #2a3a5c;
+--border-th: 1px solid #2a3a5c;
+--shadow:    0 4px 24px rgba(0,0,0,0.6);
+--glow-r:    0 0 16px rgba(233,69,96,0.5);
+--glow-g:    0 0 16px rgba(0,212,170,0.5);
+--glow-a:    0 0 16px rgba(245,166,35,0.4);
+--monitor-glow: 0 0 60px rgba(74,144,226,0.15);
+--cell-hover: rgba(124, 92, 191, 0.3);
+--cell-selected: rgba(0, 212, 170, 0.4);
+--cell-fixed: rgba(245, 166, 35, 0.25);
+}
+html, body {
+height: 100%;
+background: radial-gradient(ellipse at center, #0b0d14 0%, #05060a 100%);
+font-family: 'Share Tech Mono', monospace;
+color: var(--ink);
+overflow: hidden;
+}
+.game-outer {
+height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 8px 12px;
+transition: padding 0.3s ease;
+}
+.game-frame {
+width: 98vw;
+max-width: 1600px;
+height: min(96vh, 1000px);
+background: linear-gradient(145deg, #0f1320 0%, #0a0e18 100%);
+border: var(--border);
+border-radius: 12px;
+box-shadow: var(--monitor-glow), var(--shadow), inset 0 0 80px rgba(0,0,0,0.4);
+display: flex;
+flex-direction: column;
+overflow: hidden;
+position: relative;
+transition: all 0.3s ease;
+}
+.game-frame.fullscreen {
+width: 100vw;
+height: 100vh;
+max-width: none;
+border-radius: 0;
+border-width: 0;
+box-shadow: none;
+}
+.game-frame::before {
+content:'';
+position:absolute;
+inset:0;
+background: repeating-linear-gradient(
+0deg,
+transparent 0px,
+transparent 2px,
+rgba(0,0,0,0.08) 2px,
+rgba(0,0,0,0.08) 4px
+);
+pointer-events:none;
+z-index:9999;
+border-radius:12px;
+opacity: 0.6;
+}
+.game-frame.fullscreen::before { border-radius: 0; }
+.game-frame::after {
+content:'';
+position:absolute;
+inset:0;
+background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%);
+pointer-events:none;
+z-index:9998;
+border-radius:12px;
+}
+.game-frame.fullscreen::after { border-radius: 0; }
+.game-frame::before {
+mask: radial-gradient(ellipse at center, black 70%, transparent 100%);
+-webkit-mask: radial-gradient(ellipse at center, black 70%, transparent 100%);
+}
+.pixel-font { font-family: 'Press Start 2P', monospace; }
+.panel { background: var(--panel); border: var(--border); }
+.titlebar {
+background: linear-gradient(90deg, var(--card), #0f1a33);
+border-bottom: var(--border);
+padding: 8px 16px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-shrink: 0;
+position: relative;
+z-index: 100;
+}
+.titlebar::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--accent), transparent);
+opacity: 0.6;
+}
+.titlebar-name {
+font-family: 'Press Start 2P', monospace;
+font-size: 10px;
+letter-spacing: 3px;
+color: var(--accent);
+text-shadow: var(--glow-r);
+}
+.titlebar-dots { display: flex; gap: 8px; }
+.titlebar-dot {
+width: 12px; height: 12px; border-radius: 50%;
+box-shadow: 0 0 8px currentColor;
+transition: transform 0.15s;
+}
+.titlebar-dot:hover { transform: scale(1.2); }
+.dot-r { background: var(--accent); color: var(--accent); }
+.dot-y { background: var(--accent2); color: var(--accent2); }
+.dot-g { background: var(--accent3); color: var(--accent3); }
+.fullscreen-btn {
+background: var(--card);
+color: var(--ink);
+border: 1px solid var(--border-th);
+padding: 6px 14px;
+border-radius: 6px;
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 6px;
+transition: all 0.15s;
+margin-left: 12px;
+}
+.fullscreen-btn:hover {
+border-color: var(--accent3);
+color: var(--accent3);
+box-shadow: var(--glow-g);
+}
+.fullscreen-btn.active {
+background: var(--accent);
+border-color: var(--accent);
+color: #fff;
+}
+.game-main {
+display: grid;
+grid-template-columns: 180px 1fr 220px;
+min-height: 0;
+flex: 1;
+overflow: hidden;
+}
+.sidebar-left {
+border-right: var(--border);
+display: flex;
+flex-direction: column;
+overflow: hidden;
+background: linear-gradient(180deg, var(--panel), #0d1424);
+position: relative;
+}
+.sidebar-left::after {
+content:'';
+position:absolute;
+right:0; top:0; bottom:0;
+width:1px;
+background: linear-gradient(180deg, transparent, var(--border-th), transparent);
+}
+.sidebar-block {
+border-bottom: var(--border-th);
+padding: 12px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+}
+.menu-btn {
+display: flex;
+align-items: center;
+gap: 6px;
+background: linear-gradient(135deg, var(--accent), #c73250);
+color: #fff;
+padding: 10px 16px;
+cursor: pointer;
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+letter-spacing: 1px;
+border: none;
+width: 100%;
+justify-content: center;
+transition: all 0.15s;
+border-radius: 6px;
+box-shadow: 0 2px 8px rgba(233,69,96,0.3);
+}
+.menu-btn:hover {
+background: linear-gradient(135deg, #c73250, var(--accent));
+transform: translateY(-1px);
+box-shadow: var(--glow-r);
+}
+.menu-btn:active { transform: translateY(0); }
+.clock-display {
+font-family: 'Press Start 2P', monospace;
+font-size: 14px;
+letter-spacing: 2px;
+text-align: center;
+color: var(--accent3);
+text-shadow: var(--glow-g);
+background: rgba(0,212,170,0.1);
+padding: 8px 14px;
+border-radius: 6px;
+border: 1px solid rgba(0,212,170,0.3);
+min-width: 90px;
+}
+.stat-row { display: flex; align-items: center; gap: 6px; width: 100%; padding: 5px 0; }
+.stat-label { font-size: 7px; letter-spacing: 1px; color: var(--ink-dim); width: 32px; }
+.stat-bar { flex: 1; height: 10px; border: var(--border-th); background: #0b0c1a; border-radius: 4px; overflow: hidden; position: relative; }
+.stat-bar::after {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+animation: shimmer 2s infinite;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.stat-fill { height: 100%; transition: width 0.4s ease; border-radius: 4px; position: relative; }
+.stat-fill.focus-bar { background: linear-gradient(90deg, var(--accent4), #a07de0); }
+.stat-fill.stress-bar { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+.stat-fill.energy-bar { background: linear-gradient(90deg, var(--accent3), #00a88a); }
+.inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.inv-item {
+border: var(--border-th);
+aspect-ratio: 1;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer; position: relative;
+background: linear-gradient(145deg, #0f1a2e, #0a1220);
+border-radius: 6px;
+transition: all 0.15s;
+}
+.inv-item:hover {
+border-color: var(--accent);
+background: linear-gradient(145deg, #1a2a42, #121e33);
+box-shadow: var(--glow-r);
+transform: translateY(-2px);
+}
+.inv-item:active { transform: translateY(0); }
+.inv-item svg { width: 24px; height: 24px; }
+.inv-badge {
+position: absolute; top: 4px; right: 4px;
+background: var(--accent);
+color: #fff;
+font-size: 7px; width: 16px; height: 16px;
+display: flex; align-items: center; justify-content: center;
+font-family: 'Press Start 2P', monospace;
+border-radius: 4px;
+box-shadow: 0 2px 4px rgba(233,69,96,0.4);
+}
+.scene-area {
+display: flex;
+flex-direction: column;
+border-right: var(--border);
+overflow: hidden;
+position: relative;
+}
+.scene-area::after {
+content:'';
+position:absolute;
+right:0; top:0; bottom:0;
+width:1px;
+background: linear-gradient(180deg, transparent, var(--border-th), transparent);
+}
+.scene-title {
+border-bottom: var(--border);
+padding: 8px 16px;
+font-family: 'Press Start 2P', monospace;
+font-size: 10px;
+letter-spacing: 3px;
+text-align: center;
+background: linear-gradient(90deg, var(--card), #0f1a33);
+color: var(--accent2);
+flex-shrink: 0;
+position: relative;
+}
+.scene-title::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+}
+.scene-viewport {
+flex: 1;
+position: relative;
+overflow: hidden;
+background: #050810;
+}
+.desktop-icons {
+position: absolute;
+top: 16px; left: 16px;
+display: grid;
+grid-template-columns: repeat(4, 64px);
+gap: 10px;
+z-index: 20;
+pointer-events: none;
+}
+.desktop-icons > * { pointer-events: auto; }
+.desk-icon {
+display: flex; flex-direction: column; align-items: center; gap: 6px;
+cursor: pointer; padding: 8px;
+border: 1px solid transparent;
+border-radius: 8px;
+transition: all 0.15s;
+background: transparent;
+position: relative;
+}
+.desk-icon::before {
+content:'';
+position:absolute;
+inset:-3px;
+border-radius:10px;
+background: linear-gradient(135deg, rgba(233,69,96,0.2), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+pointer-events: none;
+}
+.desk-icon:hover::before { opacity: 1; }
+.desk-icon:hover {
+border-color: rgba(233,69,96,0.6);
+background: rgba(233,69,96,0.1);
+transform: scale(1.05);
+}
+.desk-icon:active { transform: scale(0.98); }
+.desk-icon-img {
+width: 44px; height: 44px;
+border: 1px solid rgba(255,255,255,0.2);
+display: flex; align-items: center; justify-content: center;
+background: linear-gradient(145deg, rgba(15,52,96,0.8), rgba(10,35,65,0.9));
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+transition: all 0.15s;
+}
+.desk-icon:hover .desk-icon-img {
+border-color: var(--accent);
+box-shadow: var(--glow-r);
+}
+.desk-icon-img svg { width: 22px; height: 22px; }
+.desk-icon-label {
+font-size: 7px;
+color: #ccc;
+text-align: center;
+letter-spacing: 0.5px;
+text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.os-window {
+position: absolute;
+background: linear-gradient(145deg, var(--panel), #0d1424);
+border: var(--border);
+border-radius: 8px;
+display: flex; flex-direction: column;
+overflow: hidden;
+box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+will-change: transform, left, top;
+transition: box-shadow 0.15s, border-color 0.15s;
+min-width: 360px;
+min-height: 300px;
+}
+.os-window.active {
+z-index: 50;
+box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 0 2px var(--accent), var(--glow-r);
+border-color: var(--accent);
+}
+.os-window:not(.active) { z-index: 10; opacity: 0.92; }
+.window-titlebar {
+background: linear-gradient(90deg, var(--card), #0f1a33);
+padding: 8px 12px;
+display: flex; align-items: center; justify-content: space-between;
+cursor: grab; min-height: 36px; user-select: none;
+border-bottom: var(--border-th);
+position: relative;
+}
+.window-titlebar::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+opacity: 0.4;
+}
+.window-titlebar:active { cursor: grabbing; }
+.win-title {
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+letter-spacing: 1px;
+color: var(--ink);
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.win-controls { display: flex; gap: 6px; }
+.win-btn {
+width: 18px; height: 18px; border-radius: 50%;
+border: none; cursor: pointer;
+font-size: 12px; display: flex; align-items: center; justify-content: center;
+padding: 0; transition: all 0.15s;
+position: relative;
+box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.win-btn::after {
+content:'';
+position:absolute;
+inset:0;
+border-radius:50%;
+background: rgba(255,255,255,0.2);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.win-btn:hover::after { opacity: 1; }
+.win-btn.min-btn { background: linear-gradient(135deg, var(--accent2), #d48a1a); color: #000; }
+.win-btn.close-btn { background: linear-gradient(135deg, var(--accent), #c73250); color: #fff; }
+.win-btn:hover { transform: scale(1.1); }
+.win-btn:active { transform: scale(0.95); }
+.window-body {
+flex: 1;
+overflow: auto;
+background: var(--panel);
+position: relative;
+}
+.window-body::before {
+content:'';
+position:absolute;
+inset:0;
+background: repeating-linear-gradient(
+0deg,
+transparent 0px,
+transparent 2px,
+rgba(0,0,0,0.03) 2px,
+rgba(0,0,0,0.03) 4px
+);
+pointer-events: none;
+z-index: 1;
+}
+.sidebar-right {
+display: flex; flex-direction: column; gap: 0; overflow: hidden;
+background: linear-gradient(180deg, var(--panel), #0d1424);
+position: relative;
+}
+.ops-dashboard {
+border-bottom: var(--border);
+padding: 12px;
+position: relative;
+}
+.ops-dashboard::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--border-th), transparent);
+}
+.ops-label {
+font-size: 8px;
+letter-spacing: 2px;
+color: var(--ink-dim);
+margin-bottom: 10px;
+text-align: center;
+font-family: 'Press Start 2P', monospace;
+}
+.ops-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+}
+.ops-card {
+background: linear-gradient(145deg, #0f1a2e, #0a1220);
+border: var(--border-th);
+border-radius: 6px;
+padding: 10px;
+cursor: pointer;
+transition: all 0.15s;
+position: relative;
+overflow: hidden;
+}
+.ops-card::before {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.ops-card:hover::before { opacity: 1; }
+.ops-card:hover {
+border-color: var(--accent3);
+transform: translateY(-2px);
+box-shadow: var(--glow-g);
+}
+.ops-card:active { transform: translateY(0); }
+.ops-card .icon {
+font-size: 18px;
+margin-bottom: 6px;
+display: block;
+text-align: center;
+}
+.ops-card .label {
+font-size: 7px;
+text-align: center;
+color: var(--ink-dim);
+font-family: 'Press Start 2P', monospace;
+}
+.ops-card .count {
+position: absolute;
+top: 6px;
+right: 8px;
+background: var(--accent);
+color: #fff;
+font-size: 7px;
+width: 18px;
+height: 18px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-family: 'Press Start 2P', monospace;
+}
+.tasks-block {
+flex: 1;
+overflow-y: auto;
+padding: 12px;
+border-bottom: var(--border);
+position: relative;
+}
+.tasks-block::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--border-th), transparent);
+}
+.tasks-label {
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+letter-spacing: 1px;
+margin-bottom: 12px;
+color: var(--accent2);
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+.task-dropzone {
+min-height: 70px;
+border: 2px dashed var(--border-th);
+border-radius: 8px;
+padding: 10px;
+margin-top: 10px;
+transition: all 0.15s;
+background: rgba(0,0,0,0.1);
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+}
+.task-dropzone.drag-over {
+border-color: var(--accent3);
+background: rgba(0,212,170,0.1);
+box-shadow: inset 0 0 12px var(--glow-g);
+}
+.task-item {
+border: var(--border-th);
+padding: 10px;
+margin-bottom: 8px;
+cursor: grab;
+display: flex;
+align-items: flex-start;
+gap: 10px;
+background: linear-gradient(145deg, #0f1a2e, #0a1220);
+border-radius: 6px;
+transition: all 0.15s;
+position: relative;
+user-select: none;
+}
+.task-item:active { cursor: grabbing; }
+.task-item:hover:not(.done) {
+border-color: var(--accent);
+background: linear-gradient(145deg, #1a2a42, #121e33);
+transform: translateX(2px);
+}
+.task-item.done {
+background: rgba(0,212,170,0.12);
+border-color: var(--accent3);
+opacity: 0.7;
+}
+.task-item.dragging {
+opacity: 0.8;
+transform: scale(1.02) rotate(1deg);
+z-index: 1000;
+box-shadow: var(--shadow), var(--glow-a);
+}
+.task-icon {
+width: 20px;
+height: 20px;
+flex-shrink: 0;
+margin-top: 2px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.task-name {
+font-size: 8px;
+line-height: 1.4;
+letter-spacing: 0.5px;
+font-weight: 500;
+}
+.task-desc {
+font-size: 7px;
+color: var(--ink-dim);
+margin-top: 2px;
+line-height: 1.3;
+}
+.task-check {
+position: absolute;
+right: 8px;
+top: 8px;
+color: var(--accent3);
+font-size: 10px;
+animation: popIn 0.2s ease;
+}
+@keyframes popIn {
+0% { transform: scale(0); opacity: 0; }
+50% { transform: scale(1.2); }
+100% { transform: scale(1); opacity: 1; }
+}
+.status-panel-block {
+padding: 14px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+.action-btn {
+background: linear-gradient(145deg, var(--card), #0a1220);
+color: var(--ink);
+border: var(--border-th);
+border-radius: 6px;
+padding: 10px 12px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+letter-spacing: 1px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+transition: all 0.15s;
+width: 100%;
+position: relative;
+overflow: hidden;
+}
+.action-btn::before {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.action-btn:hover::before { opacity: 1; }
+.action-btn:hover {
+border-color: var(--accent2);
+color: var(--accent2);
+transform: translateY(-1px);
+}
+.action-btn:active { transform: translateY(0); }
+.action-btn.primary {
+background: linear-gradient(135deg, var(--accent), #c73250);
+border-color: var(--accent);
+color: #fff;
+box-shadow: 0 2px 8px rgba(233,69,96,0.3);
+}
+.action-btn.primary:hover {
+background: linear-gradient(135deg, #c73250, var(--accent));
+box-shadow: var(--glow-r);
+}
+.text-box {
+border-top: var(--border);
+padding: 14px 20px;
+min-height: 90px;
+display: flex; flex-direction: column; justify-content: center; gap: 8px;
+background: linear-gradient(180deg, var(--panel), #0d1424);
+flex-shrink: 0;
+position: relative;
+}
+.text-box::before {
+content:'';
+position:absolute;
+top:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--border-th), transparent);
+}
+.text-desc {
+font-size: 13px;
+letter-spacing: 0.5px;
+line-height: 1.6;
+color: var(--ink);
+text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.text-desc strong {
+color: var(--accent2);
+font-weight: normal;
+letter-spacing: 2px;
+text-shadow: var(--glow-a);
+}
+.text-action {
+font-family: 'Press Start 2P', monospace;
+font-size: 9px;
+letter-spacing: 2px;
+text-align: center;
+border-top: var(--border-th);
+padding-top: 10px;
+margin-top: 6px;
+color: var(--accent);
+position: relative;
+}
+.text-action::after {
+content:'▸';
+display: inline-block;
+margin-right: 4px;
+animation: blink 1s infinite;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); border-radius: 3px; }
+::-webkit-scrollbar-thumb {
+background: linear-gradient(180deg, var(--card), var(--panel));
+border-radius: 3px;
+border: 1px solid var(--border-th);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.app-inner { padding: 14px; height: 100%; overflow-y: auto; font-size: 11px; position: relative; }
+.app-inner::before {
+content:'';
+position:absolute;
+inset:0;
+background: repeating-linear-gradient(
+0deg,
+transparent 0px,
+transparent 2px,
+rgba(0,0,0,0.02) 2px,
+rgba(0,0,0,0.02) 4px
+);
+pointer-events: none;
+z-index: 1;
+}
+.app-h {
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+letter-spacing: 1px;
+margin-bottom: 12px;
+padding-bottom: 10px;
+border-bottom: var(--border-th);
+color: var(--accent2);
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.app-h::after {
+content:'';
+flex:1;
+height:1px;
+background: linear-gradient(90deg, var(--border-th), transparent);
+}
+.app-btn {
+background: linear-gradient(135deg, var(--accent), #c73250);
+color: #fff;
+border: none;
+padding: 8px 16px;
+border-radius: 6px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+cursor: pointer;
+letter-spacing: 1px;
+display: inline-block;
+margin-top: 8px;
+transition: all 0.15s;
+position: relative;
+overflow: hidden;
+box-shadow: 0 2px 8px rgba(233,69,96,0.3);
+}
+.app-btn::before {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.app-btn:hover::before { opacity: 1; }
+.app-btn:hover {
+background: linear-gradient(135deg, #c73250, var(--accent));
+transform: translateY(-1px);
+box-shadow: var(--glow-r);
+}
+.app-btn:active { transform: translateY(0); }
+.app-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.app-btn.ok {
+background: linear-gradient(135deg, var(--accent3), #00a88a);
+box-shadow: 0 2px 8px rgba(0,212,170,0.3);
+}
+.app-btn.ok:hover {
+background: linear-gradient(135deg, #00a88a, var(--accent3));
+box-shadow: var(--glow-g);
+}
+.app-input {
+width: 100%;
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+border: var(--border-th);
+padding: 8px;
+font-family: 'Share Tech Mono', monospace;
+font-size: 11px;
+color: var(--ink);
+outline: none;
+resize: none;
+border-radius: 6px;
+transition: border-color 0.15s;
+}
+.app-input:focus {
+border-color: var(--accent3);
+box-shadow: 0 0 0 2px rgba(0,212,170,0.2);
+}
+.app-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 8px 0;
+border-bottom: var(--border-th);
+gap: 10px;
+}
+.badge-urgent {
+background: var(--accent);
+color: #fff;
+font-size: 7px;
+padding: 2px 8px;
+border-radius: 4px;
+font-family: 'Press Start 2P', monospace;
+box-shadow: 0 2px 4px rgba(233,69,96,0.4);
+}
+.badge-ok {
+border: var(--border-th);
+color: var(--accent3);
+font-size: 7px;
+padding: 2px 8px;
+border-radius: 4px;
+background: rgba(0,212,170,0.1);
+}
+.progress-bar {
+width: 100%;
+height: 10px;
+border: var(--border-th);
+background: #0b0c1a;
+overflow: hidden;
+margin-top: 8px;
+border-radius: 6px;
+position: relative;
+}
+.progress-fill {
+height: 100%;
+background: linear-gradient(90deg, var(--accent3), var(--accent4));
+animation: fill-anim 1.5s ease-in-out infinite alternate;
+border-radius: 6px;
+position: relative;
+}
+.progress-fill::after {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+animation: shimmer 1s infinite;
+}
+@keyframes fill-anim { from { width: 20%; } to { width: 85%; } }
+.notif-area {
+position: fixed;
+top: 16px;
+right: 16px;
+z-index: 9000;
+display: flex;
+flex-direction: column;
+gap: 8px;
+pointer-events: none;
+}
+.notif {
+background: linear-gradient(145deg, var(--card), #0d1424);
+color: var(--ink);
+padding: 10px 18px;
+border-radius: 8px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+letter-spacing: 1px;
+border: var(--border);
+display: flex;
+align-items: center;
+gap: 12px;
+animation: notif-in 0.25s ease-out;
+box-shadow: var(--shadow), 0 0 20px rgba(0,0,0,0.4);
+pointer-events: auto;
+cursor: pointer;
+transition: transform 0.15s;
+position: relative;
+overflow: hidden;
+max-width: 280px;
+}
+.notif::before {
+content:'';
+position:absolute;
+left:0; top:0; bottom:0;
+width:4px;
+background: var(--accent2);
+}
+.notif.success::before { background: var(--accent3); }
+.notif.error::before { background: var(--accent); }
+.notif:hover {
+transform: translateX(-3px);
+border-color: var(--accent3);
+}
+.notif.success { border-color: var(--accent3); }
+.notif.error { border-color: var(--accent); }
+@keyframes notif-in {
+from { transform: translateX(120%); opacity:0; }
+to { transform: translateX(0); opacity:1; }
+}
+.notif-dot {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+background: var(--accent2);
+flex-shrink: 0;
+box-shadow: 0 0 8px currentColor;
+}
+.notif-dot.success { background: var(--accent3); color: var(--accent3); }
+.notif-dot.error { background: var(--accent); color: var(--accent); }
+.complete-overlay {
+position: absolute;
+inset: 0;
+background: rgba(5,8,16,0.94);
+backdrop-filter: blur(10px);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 8000;
+border-radius: 12px;
+animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.complete-box {
+background: linear-gradient(145deg, var(--panel), #0d1424);
+border: var(--border);
+border-radius: 10px;
+padding: 36px;
+max-width: 480px;
+width: 94%;
+box-shadow: var(--shadow), 0 0 60px rgba(0,0,0,0.6);
+position: relative;
+animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+from { transform: translateY(20px); opacity: 0; }
+to { transform: translateY(0); opacity: 1; }
+}
+.complete-box::before {
+content:'';
+position:absolute;
+inset:0;
+border-radius:10px;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03), transparent);
+pointer-events: none;
+}
+.complete-title {
+font-family: 'Press Start 2P', monospace;
+font-size: 14px;
+letter-spacing: 2px;
+margin-bottom: 28px;
+text-align: center;
+color: var(--accent2);
+text-shadow: var(--glow-a);
+position: relative;
+}
+.complete-title::after {
+content:'';
+position:absolute;
+bottom:-14px; left:50%; transform:translateX(-50%);
+width:60px; height:2px;
+background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+}
+.complete-row {
+display: flex;
+justify-content: space-between;
+padding: 10px 0;
+border-bottom: var(--border-th);
+font-size: 11px;
+letter-spacing: 0.5px;
+position: relative;
+}
+.complete-row::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--border-th), transparent);
+}
+.complete-row:last-child { border-bottom: none; }
+.complete-btns {
+display: flex;
+gap: 12px;
+margin-top: 28px;
+position: relative;
+}
+.complete-btn {
+flex: 1;
+padding: 12px;
+background: linear-gradient(135deg, var(--accent), #c73250);
+color: #fff;
+border: none;
+border-radius: 6px;
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+letter-spacing: 1px;
+cursor: pointer;
+transition: all 0.15s;
+position: relative;
+overflow: hidden;
+box-shadow: 0 3px 12px rgba(233,69,96,0.4);
+}
+.complete-btn::before {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.complete-btn:hover::before { opacity: 1; }
+.complete-btn:hover {
+background: linear-gradient(135deg, #c73250, var(--accent));
+transform: translateY(-2px);
+box-shadow: var(--glow-r);
+}
+.complete-btn:active { transform: translateY(0); }
+.complete-btn.outline {
+background: transparent;
+color: var(--ink);
+border: var(--border-th);
+box-shadow: none;
+}
+.complete-btn.outline:hover {
+border-color: var(--accent3);
+color: var(--accent3);
+background: rgba(0,212,170,0.1);
+}
+.menu-screen {
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 24px;
+background: var(--bg);
+position: relative;
+}
+.menu-screen::before {
+content:'';
+position:absolute;
+inset:0;
+background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.4) 100%);
+pointer-events: none;
+}
+.menu-box {
+border: var(--border);
+max-width: 680px;
+width: 100%;
+background: linear-gradient(145deg, var(--panel), #0d1424);
+border-radius: 12px;
+overflow: hidden;
+box-shadow: var(--shadow), 0 0 80px rgba(0,0,0,0.5);
+position: relative;
+z-index: 10;
+}
+.menu-box::before {
+content:'';
+position:absolute;
+inset:0;
+background: repeating-linear-gradient(
+0deg,
+transparent 0px,
+transparent 2px,
+rgba(0,0,0,0.03) 2px,
+rgba(0,0,0,0.03) 4px
+);
+pointer-events: none;
+z-index: 1;
+}
+.menu-header {
+background: linear-gradient(90deg, var(--card), #0f1a33);
+padding: 28px;
+text-align: center;
+border-bottom: var(--border);
+position: relative;
+}
+.menu-header::after {
+content:'';
+position:absolute;
+bottom:0; left:0; right:0;
+height:1px;
+background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.menu-game-title {
+font-family: 'Press Start 2P', monospace;
+font-size: 20px;
+letter-spacing: 4px;
+margin-bottom: 12px;
+color: var(--accent);
+text-shadow: var(--glow-r);
+position: relative;
+}
+.menu-subtitle {
+font-size: 11px;
+letter-spacing: 3px;
+color: var(--ink-dim);
+position: relative;
+}
+.episode-list {
+padding: 18px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+max-height: 440px;
+overflow-y: auto;
+position: relative;
+z-index: 2;
+}
+.ep-btn {
+border: var(--border-th);
+padding: 14px 16px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 16px;
+cursor: pointer;
+background: linear-gradient(145deg, #0f1a2e, #0a1220);
+transition: all 0.15s;
+width: 100%;
+text-align: left;
+color: var(--ink);
+position: relative;
+overflow: hidden;
+}
+.ep-btn::before {
+content:'';
+position:absolute;
+inset:0;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.ep-btn:hover::before { opacity: 1; }
+.ep-btn:not(:disabled):hover {
+background: linear-gradient(145deg, var(--card), #0d1424);
+border-color: var(--accent);
+transform: translateX(3px);
+box-shadow: var(--glow-r);
+}
+.ep-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ep-btn.done {
+border-color: var(--accent3);
+background: linear-gradient(145deg, rgba(0,212,170,0.1), rgba(0,168,138,0.15));
+}
+.ep-num {
+width: 36px;
+height: 36px;
+background: linear-gradient(135deg, var(--accent), #c73250);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-family: 'Press Start 2P', monospace;
+font-size: 10px;
+flex-shrink: 0;
+border-radius: 6px;
+box-shadow: 0 3px 10px rgba(233,69,96,0.4);
+position: relative;
+}
+.ep-num.done-num {
+background: linear-gradient(135deg, var(--accent3), #00a88a);
+box-shadow: 0 3px 10px rgba(0,212,170,0.4);
+}
+.ep-info { flex: 1; }
+.ep-title {
+font-family: 'Press Start 2P', monospace;
+font-size: 9px;
+letter-spacing: 1px;
+margin-bottom: 6px;
+position: relative;
+}
+.ep-desc {
+font-size: 10px;
+color: var(--ink-dim);
+position: relative;
+}
+.ep-meta { text-align: right; }
+.ep-diff { font-size: 9px; }
+.ep-diff.easy { color: var(--accent3); }
+.ep-diff.medium { color: var(--accent2); }
+.ep-diff.hard, .ep-diff.expert {
+color: var(--accent);
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+text-shadow: var(--glow-r);
+}
+.ep-xp {
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+margin-top: 4px;
+color: var(--accent2);
+position: relative;
+}
+.score-line {
+padding: 14px;
+border-top: var(--border);
+text-align: center;
+font-family: 'Press Start 2P', monospace;
+font-size: 9px;
+letter-spacing: 1px;
+color: var(--accent2);
+background: rgba(245,166,35,0.05);
+position: relative;
+z-index: 2;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.cursor { animation: blink 1s infinite; color: var(--accent); }
+.timer-urgent {
+animation: blink 0.4s infinite;
+color: var(--accent) !important;
+text-shadow: var(--glow-r);
+}
+.dot-wave span {
+display:inline-block;
+width:6px;
+height:6px;
+background:var(--accent3);
+border-radius:50%;
+margin:0 4px;
+animation:dot-wave 1.4s ease-in-out infinite;
+box-shadow: 0 0 6px var(--accent3);
+}
+@keyframes dot-wave {
+0%,80%,100%{transform:scale(0.6); opacity:0.5;}
+40%{transform:scale(1.2); opacity:1;}
+}
+.dot-wave span:nth-child(2){animation-delay:0.2s;}
+.dot-wave span:nth-child(3){animation-delay:0.4s;}
+.email-row {
+padding: 10px;
+margin-bottom: 6px;
+border: 1px solid #2a3a5c;
+cursor: pointer;
+border-radius: 6px;
+transition: all 0.15s;
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+position: relative;
+}
+.email-row::before {
+content:'';
+position:absolute;
+inset:0;
+border-radius:6px;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.email-row:hover::before { opacity: 1; }
+.email-row:hover {
+border-color: var(--accent);
+transform: translateX(2px);
+}
+.email-row.selected {
+border-color: var(--accent3);
+background: linear-gradient(145deg, rgba(0,212,170,0.1), rgba(0,168,138,0.15));
+box-shadow: 0 0 12px var(--glow-g);
+}
+.email-row.read { opacity: 0.7; }
+.call-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 12px;
+border: 1px solid #2a3a5c;
+margin-bottom: 8px;
+cursor: pointer;
+border-radius: 6px;
+transition: all 0.15s;
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+position: relative;
+}
+.call-row::before {
+content:'';
+position:absolute;
+inset:0;
+border-radius:6px;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.call-row:hover::before { opacity: 1; }
+.call-row:hover:not(.answered-row) {
+border-color: var(--accent2);
+transform: translateX(2px);
+}
+.call-row.answered-row {
+border-color: var(--accent3);
+background: linear-gradient(145deg, rgba(0,212,170,0.1), rgba(0,168,138,0.15));
+cursor: default;
+}
+.cal-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 12px;
+border: 1px solid #2a3a5c;
+margin-bottom: 8px;
+cursor: pointer;
+border-radius: 6px;
+transition: all 0.15s;
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+position: relative;
+}
+.cal-row::before {
+content:'';
+position:absolute;
+inset:0;
+border-radius:6px;
+background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+opacity: 0;
+transition: opacity 0.15s;
+}
+.cal-row:hover::before { opacity: 1; }
+.cal-row:hover:not(.done-row) {
+border-color: var(--accent4);
+transform: translateX(2px);
+}
+.cal-row.done-row {
+border-color: var(--accent3);
+background: linear-gradient(145deg, rgba(0,212,170,0.1), rgba(0,168,138,0.15));
+cursor: default;
+}
+.minimized-bar {
+position: absolute;
+bottom: 8px;
+left: 8px;
+display: flex;
+gap: 6px;
+z-index: 100;
+background: rgba(13,17,23,0.85);
+padding: 6px 10px;
+border-radius: 8px;
+border: 1px solid var(--border-th);
+}
+.minimized-btn {
+background: linear-gradient(145deg, var(--card), #0d1424);
+color: var(--ink);
+border: var(--border-th);
+padding: 6px 12px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+cursor: pointer;
+letter-spacing: 0.5px;
+border-radius: 6px;
+transition: all 0.15s;
+}
+.minimized-btn:hover {
+border-color: var(--accent2);
+background: linear-gradient(145deg, #0f1a33, #0a1220);
+transform: translateY(-1px);
+}
+.minimized-btn:active { transform: translateY(0); }
+.window-body::-webkit-scrollbar { width: 5px; }
+.window-body::-webkit-scrollbar-track { background: var(--panel); border-radius: 3px; }
+.window-body::-webkit-scrollbar-thumb {
+background: linear-gradient(180deg, var(--card), var(--panel));
+border-radius: 3px;
+border: 1px solid var(--border-th);
+}
+@keyframes progress-anim { from { width: 20%; } to { width: 85%; } }
+.clearance-badge {
+position: absolute;
+top: 12px;
+right: 12px;
+background: linear-gradient(135deg, var(--accent4), #5c4a9f);
+color: #fff;
+padding: 6px 12px;
+border-radius: 20px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+letter-spacing: 1px;
+border: 1px solid rgba(255,255,255,0.2);
+box-shadow: 0 2px 8px rgba(124,92,191,0.4);
+z-index: 60;
+}
+.threat-indicator {
+position: absolute;
+top: 12px;
+left: 12px;
+display: flex;
+align-items: center;
+gap: 8px;
+background: rgba(231,76,60,0.15);
+padding: 6px 12px;
+border-radius: 20px;
+border: 1px solid rgba(231,76,60,0.3);
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+z-index: 60;
+}
+.threat-dot {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+background: var(--accent3);
+animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.6; transform: scale(0.9); }
+}
+.drag-preview {
+position: fixed;
+pointer-events: none;
+z-index: 10000;
+opacity: 0.9;
+transform: scale(0.95);
+filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+}
+.sheet-grid {
+display: grid;
+grid-template-columns: 40px repeat(5, 1fr);
+grid-template-rows: repeat(8, 32px);
+gap: 1px;
+background: var(--border-th);
+border: var(--border-th);
+border-radius: 4px;
+overflow: hidden;
+margin-bottom: 12px;
+}
+.sheet-cell {
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+border: 1px solid #2a3a5c;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 10px;
+cursor: pointer;
+transition: all 0.1s;
+position: relative;
+padding: 2px 4px;
+text-align: center;
+}
+.sheet-cell.header {
+background: linear-gradient(145deg, var(--card), #0d1424);
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+color: var(--accent2);
+font-weight: bold;
+}
+.sheet-cell:hover {
+background: var(--cell-hover);
+border-color: var(--accent4);
+}
+.sheet-cell.selected {
+background: var(--cell-selected);
+border-color: var(--accent3);
+box-shadow: inset 0 0 0 2px var(--accent3);
+}
+.sheet-cell.fixed {
+background: var(--cell-fixed);
+border-color: var(--accent2);
+}
+.sheet-cell.fixed::after {
+content: '🔒';
+position: absolute;
+top: 2px;
+right: 2px;
+font-size: 8px;
+}
+.sheet-cell input {
+width: 100%;
+height: 100%;
+background: transparent;
+border: none;
+color: var(--ink);
+font-family: 'Share Tech Mono', monospace;
+font-size: 10px;
+text-align: center;
+outline: none;
+}
+.sheet-cell input:focus {
+background: rgba(0,212,170,0.1);
+}
+.sheet-toolbar {
+display: flex;
+gap: 8px;
+margin-bottom: 12px;
+flex-wrap: wrap;
+}
+.sheet-btn {
+background: linear-gradient(145deg, var(--card), #0a1220);
+color: var(--ink);
+border: var(--border-th);
+border-radius: 4px;
+padding: 6px 10px;
+font-family: 'Press Start 2P', monospace;
+font-size: 7px;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 4px;
+transition: all 0.15s;
+}
+.sheet-btn:hover {
+border-color: var(--accent3);
+color: var(--accent3);
+transform: translateY(-1px);
+}
+.sheet-btn.active {
+background: var(--accent3);
+border-color: var(--accent3);
+color: #000;
+}
+.formula-bar {
+display: flex;
+gap: 8px;
+margin-bottom: 12px;
+align-items: center;
+}
+.formula-input {
+flex: 1;
+background: linear-gradient(145deg, #0b0c1a, #080a12);
+border: var(--border-th);
+padding: 6px 10px;
+font-family: 'Share Tech Mono', monospace;
+font-size: 10px;
+color: var(--ink);
+border-radius: 4px;
+}
+.chart-preview {
+border: var(--border-th);
+border-radius: 6px;
+padding: 12px;
+margin-top: 12px;
+background: linear-gradient(145deg, #0f1a2e, #0a1220);
+}
+.chart-title {
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+color: var(--accent2);
+margin-bottom: 10px;
+text-align: center;
+}
+.chart-container {
+display: flex;
+align-items: flex-end;
+gap: 4px;
+height: 100px;
+padding: 10px 0;
+}
+.chart-bar {
+flex: 1;
+background: linear-gradient(180deg, var(--accent3), var(--accent4));
+border-radius: 3px 3px 0 0;
+min-width: 20px;
+position: relative;
+transition: height 0.3s ease;
+}
+.chart-bar::after {
+content: attr(data-value);
+position: absolute;
+top: -20px;
+left: 50%;
+transform: translateX(-50%);
+font-size: 8px;
+color: var(--ink-dim);
+white-space: nowrap;
+}
+.chart-labels {
+display: flex;
+justify-content: space-around;
+margin-top: 6px;
+font-size: 7px;
+color: var(--ink-dim);
+}
+.export-section {
+margin-top: 12px;
+padding-top: 12px;
+border-top: var(--border-th);
+}
+.export-btn {
+width: 100%;
+margin-top: 8px;
+}
+.shortcut-hint {
+font-size: 7px;
+color: var(--ink-dim);
+margin-top: 4px;
+text-align: center;
+font-family: 'Press Start 2P', monospace;
+}
+.error-fallback {
+padding: 20px;
+text-align: center;
+color: var(--accent);
+}
+.error-fallback button {
+margin-top: 12px;
+background: var(--accent);
+border: none;
+padding: 8px 16px;
+color: white;
+border-radius: 4px;
+cursor: pointer;
+font-family: 'Press Start 2P', monospace;
+font-size: 8px;
+}
+
+/* --- NEW APP SPECIFIC STYLES --- */
+.terminal-output {
+  background: #000;
+  padding: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--accent3);
+  height: 120px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  border: 1px solid #2a3a5c;
+}
+.chat-msg {
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  font-size: 10px;
+}
+.chat-options {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chat-opt-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 8px;
+  background: var(--card);
+  border: 1px solid #2a3a5c;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.chat-opt-btn:hover { border-color: var(--accent2); }
+.render-heat-bar {
+  height: 16px;
+  background: #111;
+  border: 1px solid #2a3a5c;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.render-heat-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent3), var(--accent));
+  transition: width 0.2s;
+}
+.usb-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.usb-file {
+  aspect-ratio: 1;
+  background: var(--card);
+  border: 1px solid #2a3a5c;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+}
+.usb-file.infected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.usb-file.quarantined { opacity: 0.3; pointer-events: none; }
+
+/* Signature Pad Styles */
+.signature-pad {
+  border: 2px dashed var(--accent4);
+  border-radius: 8px;
+  background: #0b0c1a;
+  cursor: crosshair;
+  touch-action: none;
+}
+.signature-pad canvas {
+  display: block;
+  border-radius: 6px;
+}
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #2a3a5c;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: linear-gradient(145deg, #0f1a2e, #0a1220);
+}
+.checklist-item:hover {
+  border-color: var(--accent3);
+  background: linear-gradient(145deg, #1a2a42, #121e33);
+}
+.checklist-item.checked {
+  border-color: var(--accent3);
+  background: rgba(0,212,170,0.1);
+}
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink-dim);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.checklist-item.checked .checkbox {
+  background: var(--accent3);
+  border-color: var(--accent3);
+}
+.checkbox svg {
+  width: 14px;
+  height: 14px;
+  stroke: #000;
+  stroke-width: 3;
+  display: none;
+}
+.checklist-item.checked .checkbox svg {
+  display: block;
+}
+
+/* File Organizer Styles */
+.file-organizer {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  height: 100%;
+}
+.file-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.category-box {
+  border: 2px dashed #2a3a5c;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  background: linear-gradient(145deg, #0b0c1a, #080a12);
+}
+.category-box.drag-over {
+  border-color: var(--accent3);
+  background: rgba(0,212,170,0.1);
+  box-shadow: 0 0 12px var(--glow-g);
+}
+.category-box.filled {
+  border-style: solid;
+  border-color: var(--accent3);
+}
+.category-icon {
+  font-size: 24px;
+}
+.category-label {
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--ink-dim);
+}
+.file-pool {
+  border: 2px solid #2a3a5c;
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(145deg, #0f1a2e, #0a1220);
+  overflow-y: auto;
+}
+.file-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin: 4px;
+  background: linear-gradient(145deg, var(--card), #0d1424);
+  border: 1px solid #2a3a5c;
+  border-radius: 6px;
+  cursor: grab;
+  font-size: 9px;
+  transition: all 0.15s;
+}
+.file-item:hover {
+  border-color: var(--accent2);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-a);
+}
+.file-item:active {
+  cursor: grabbing;
+}
+.file-item.organized {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.meeting-bar {
+  height: 12px;
+  background: #111;
+  border: 1px solid #2a3a5c;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.meeting-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.2s;
+}
+
+/* AUDIO CONTROLS */
+.audio-controls {
+  display: none !important;
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 9500;
+  background: rgba(13, 22, 37, 0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-th);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+}
+.audio-btn {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--border-th);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.audio-btn:hover {
+  border-color: var(--accent3);
+  color: var(--accent3);
+  box-shadow: var(--glow-g);
+}
+.audio-btn.active {
+  background: var(--accent3);
+  color: #000;
+  border-color: var(--accent3);
+}
+.audio-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.volume-slider {
+  display: none !important;
+  /*width: 80px;*/
+  /*height: 4px;*/
+  /*-webkit-appearance: none;*/
+  /*background: var(--border-th);*/
+  /*border-radius: 2px;*/
+  /*outline: none;*/
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--glow-g);
+}
+
+/* NEW TASK STYLES */
+.approval-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+.approval-card {
+  border: 1px solid #2a3a5c;
+  border-radius: 6px;
+  padding: 10px;
+  background: linear-gradient(145deg, #0f1a2e, #0a1220);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.approval-card:hover {
+  border-color: var(--accent2);
+  transform: translateY(-2px);
+}
+.approval-card.approved {
+  border-color: var(--accent3);
+  background: rgba(0,212,170,0.1);
+  opacity: 0.7;
+}
+.approval-card .status {
+  font-size: 8px;
+  color: var(--ink-dim);
+  margin-top: 4px;
+}
+.approval-card .check {
+  color: var(--accent3);
+  font-size: 14px;
+  display: none;
+}
+.approval-card.approved .check {
+  display: block;
+}
+
+.status-select {
+  width: 100%;
+  background: linear-gradient(145deg, #0b0c1a, #080a12);
+  border: var(--border-th);
+  padding: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.status-select:focus {
+  border-color: var(--accent3);
+  outline: none;
+}
+
+.memo-textarea {
+  width: 100%;
+  min-height: 100px;
+  background: linear-gradient(145deg, #0b0c1a, #080a12);
+  border: var(--border-th);
+  padding: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  border-radius: 6px;
+  margin-top: 8px;
+  resize: vertical;
+}
+.memo-textarea:focus {
+  border-color: var(--accent3);
+  outline: none;
+}
+
+.doc-viewer {
+  border: 1px solid #2a3a5c;
+  border-radius: 6px;
+  padding: 12px;
+  background: linear-gradient(145deg, #0f1a2e, #0a1220);
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: var(--border-th);
+}
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background: #2a3a5c;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-switch.active {
+  background: var(--accent3);
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+.toggle-switch.active::after {
+  transform: translateX(20px);
+}
+
+.backup-progress {
+  margin-top: 12px;
+}
+.backup-bar {
+  height: 12px;
+  background: #111;
+  border: 1px solid #2a3a5c;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.backup-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent4), var(--accent3));
+  transition: width 0.3s ease;
+}
+
+.ping-list {
+  margin-top: 12px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.ping-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: var(--border-th);
+  font-size: 10px;
+}
+.ping-item.success { color: var(--accent3); }
+.ping-item.fail { color: var(--accent); }
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, Fragment, memo } = React;
+
+// ── AUDIO SYSTEM ───────────────────────────────────────────────────────────
+const useAudio = () => {
+  const [bgMusicEnabled, setBgMusicEnabled] = useState(true);
+  const [sfxEnabled, setSfxEnabled] = useState(true);
+  const [volume, setVolume] = useState(0.3);
+  const bgMusicRef = useRef(null);
+  const audioCtxRef = useRef(null);
+
+  // Initialize Web Audio API context
+  useEffect(() => {
+    try {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.log('Web Audio API not supported');
+    }
+    return () => {
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, []);
+
+  // Play a synthesized sound effect using Web Audio API
+  const playSfx = useCallback((type) => {
+    if (!sfxEnabled || !audioCtxRef.current) return;
+    
+    const ctx = audioCtxRef.current;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    const now = ctx.currentTime;
+    
+    switch(type) {
+      case 'click':
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+        gain.gain.setValueAtTime(volume * 0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+        break;
+      case 'complete':
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+        gain.gain.setValueAtTime(volume * 0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        break;
+      case 'notification':
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+        gain.gain.setValueAtTime(volume * 0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+        break;
+      case 'error':
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+        gain.gain.setValueAtTime(volume * 0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        break;
+      case 'success':
+        // Two-tone success sound
+        [400, 600].forEach((freq, i) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.frequency.value = freq;
+          g.gain.setValueAtTime(volume * 0.3, now + i * 0.1);
+          g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.15);
+          o.start(now + i * 0.1);
+          o.stop(now + i * 0.1 + 0.15);
+        });
+        return;
+      default:
+        osc.frequency.setValueAtTime(500, now);
+        gain.gain.setValueAtTime(volume * 0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+  }, [sfxEnabled, volume]);
+
+  // Background music using a simple lo-fi pattern
+  const toggleBgMusic = useCallback(() => {
+    setBgMusicEnabled(prev => {
+      if (!prev && audioCtxRef.current) {
+        // Start background music loop
+        const ctx = audioCtxRef.current;
+        const playNote = (freq, time, duration) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(volume * 0.15, time);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(time);
+          osc.stop(time + duration);
+        };
+        
+        // Simple lo-fi chord progression (C - Am - F - G)
+        const chords = [
+          [261.63, 329.63, 392.00], // C
+          [220.00, 261.63, 329.63], // Am
+          [174.61, 220.00, 261.63], // F
+          [196.00, 246.94, 293.66]  // G
+        ];
+        
+        let chordIndex = 0;
+        const musicInterval = setInterval(() => {
+          if (!bgMusicRef.current) return;
+          const now = ctx.currentTime;
+          const chord = chords[chordIndex % chords.length];
+          chord.forEach((freq, i) => {
+            playNote(freq, now + i * 0.05, 0.4);
+          });
+          chordIndex++;
+        }, 1200);
+        
+        bgMusicRef.current = { interval: musicInterval, stop: () => clearInterval(musicInterval) };
+        return true;
+      } else if (prev && bgMusicRef.current) {
+        // Stop background music
+        bgMusicRef.current.stop();
+        bgMusicRef.current = null;
+        return false;
+      }
+      return prev;
+    });
+  }, [volume]);
+
+  const toggleSfx = useCallback(() => setSfxEnabled(prev => !prev), []);
+  const changeVolume = useCallback((val) => {
+    setVolume(parseFloat(val));
+  }, []);
+
+  return {
+    bgMusicEnabled,
+    sfxEnabled,
+    volume,
+    toggleBgMusic,
+    toggleSfx,
+    changeVolume,
+    playSfx
+  };
+};
+
+// ── ICONS ─────────────────────────────────────────────────────────────────
+const ico = (d, extra = {}) => p => (
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...p} {...extra}>
+{typeof d === 'string' ? <path d={d}/> : d}
+</svg>
+);
+const I = {
+Menu: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+Email: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="4" width="20" height="16" rx="0"/><polyline points="2,4 12,14 22,4"/></svg>,
+Phone: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 .01h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>,
+Calendar: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="0"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+Terminal: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="3" width="20" height="18"/><polyline points="8,9 12,13 8,17"/><line x1="14" y1="17" x2="20" y2="17"/></svg>,
+Sheet: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
+Network: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="20" r="2"/><circle cx="4" cy="20" r="2"/><line x1="12" y1="6" x2="12" y2="10"/><line x1="11" y1="13" x2="5" y2="18"/><line x1="13" y1="13" x2="19" y2="18"/></svg>,
+Code: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>,
+Database: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v4c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 9v4c0 1.66 4.03 3 9 3s9-1.34 9-3V9"/><path d="M3 13v4c0 1.66 4.03 3 9 3s9-1.34 9-3v-4"/></svg>,
+Analytics: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>,
+Printer: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="6" y="14" width="12" height="8"/><polyline points="6,14 6,4 18,4 18,14"/><rect x="6" y="8" width="12" height="6"/><circle cx="18" cy="11" r="1"/></svg>,
+Camera: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+Coffee: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>,
+Bag: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>,
+Headset: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>,
+Check: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><polyline points="20,6 9,17 4,12"/></svg>,
+Lock: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+Heart: p=><svg {...p} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth={2}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+Person: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+Doc: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>,
+Clock: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>,
+Chat: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+Meeting: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="7" width="13" height="10"/><polyline points="15,7 22,4 22,20 15,17"/></svg>,
+Render: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>,
+USB: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="12,2 12,16"/><path d="M8,6l4-4 4,4"/><rect x="7" y="16" width="10" height="6"/></svg>,
+Tablet: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="4" y="2" width="16" height="20" rx="0"/><line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={3}/></svg>,
+Wifi: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>,
+Build: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
+Security: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+Target: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+Shield: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+Alert: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+Star: p=><svg {...p} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth={2}><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>,
+Chart: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+Download: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+Fix: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+Folder: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>,
+Image: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>,
+Music: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+Video: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+Approve: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>,
+Status: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+Memo: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>,
+Review: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="11" y1="14" x2="14" y2="14"/></svg>,
+Settings: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+Backup: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+Ping: p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>,
+};
+const ICON_MAP = {
+email: I.Email, organize: I.Folder, coffee: I.Coffee, chat: I.Chat,
+sheet: I.Sheet, render: I.Render, tablet: I.Tablet, meeting: I.Meeting,
+terminal: I.Terminal, usb: I.USB, doc: I.Doc,
+phone: I.Phone, calendar: I.Calendar, security: I.Camera,
+printer: I.Printer, network: I.Network, code: I.Code, database: I.Database,
+analytics: I.Analytics, headset: I.Headset, wifi: I.Wifi, build: I.Build,
+target: I.Target, shield: I.Shield, alert: I.Alert, star: I.Star,
+approve: I.Approve, status: I.Status, memo: I.Memo, review: I.Review,
+settings: I.Settings, backup: I.Backup, ping: I.Ping,
+};
+
+// EPISODES - ENHANCED WITH 6 TASKS EACH (original 3 + 3 new variations)
+const EPISODES = [
+{ id:1, title:"FIRST DAY",    diff:"Easy",   time:1800, reward:150, desc:"Orientation basics",    
+  tasks:[
+    {id:'t1',type:'email',    label:'Read HR Email',    desc:'Open Mail'},
+    {id:'t2',type:'organize',label:'Clean Desktop', desc:'Organize files'},
+    {id:'t3',type:'coffee',  label:'Morning Coffee',  desc:'Click coffee in inventory'},
+    // NEW TASKS
+    {id:'t4',type:'approve', label:'Approve Setup', desc:'Confirm workstation setup'},
+    {id:'t5',type:'status',  label:'Update Status', desc:'Set your availability'},
+    {id:'t6',type:'memo',    label:'Send Welcome Memo', desc:'Write a short intro'}
+  ]},
+{ id:2, title:"INBOX ZERO",   diff:"Easy",   time:1800, reward:200, desc:"Clear all messages",   
+  tasks:[
+    {id:'t1',type:'email',    label:'Process Inbox',   desc:'Reply to 3 emails'},
+    {id:'t2',type:'phone',   label:'Answer Calls',    desc:'Handle calls'},
+    {id:'t3',type:'sheet',   label:'Update Budget',   desc:'Fix formulas'},
+    // NEW TASKS
+    {id:'t4',type:'review',  label:'Review Documents', desc:'Mark as read'},
+    {id:'t5',type:'settings',label:'Configure Settings', desc:'Toggle preferences'},
+    {id:'t6',type:'backup',  label:'Backup Data', desc:'Save your work'}
+  ]},
+{ id:3, title:"DESIGN REVIEW",diff:"Medium", time:1800, reward:350, desc:"Approve assets",       
+  tasks:[
+    {id:'t1',type:'render',   label:'Monitor Queue',   desc:'Wait for renders'},
+    {id:'t2',type:'tablet',  label:'Sign Approval',   desc:'Use signature pad'},
+    {id:'t3',type:'calendar',label:'Schedule Meeting',desc:'Add to calendar'},
+    // NEW TASKS
+    {id:'t4',type:'approve', label:'Approve Mockups', desc:'Review 3 designs'},
+    {id:'t5',type:'ping',    label:'Test Connection', desc:'Ping servers'},
+    {id:'t6',type:'memo',    label:'Send Feedback', desc:'Write review notes'}
+  ]},
+{ id:4, title:"IT EMERGENCY", diff:"Hard",   time:1800, reward:500, desc:"Fix security breach",  
+  tasks:[
+    {id:'t1',type:'terminal', label:'System Scan',     desc:'Run diagnostics'},
+    {id:'t2',type:'network', label:'Fix Network',     desc:'Configure network'},
+    {id:'t3',type:'usb',     label:'Scan Drive',      desc:'Check for malware'},
+    // NEW TASKS
+    {id:'t4',type:'settings',label:'Update Firewall', desc:'Adjust security'},
+    {id:'t5',type:'backup',  label:'Emergency Backup', desc:'Save critical data'},
+    {id:'t6',type:'status',  label:'Alert Team', desc:'Set incident status'}
+  ]},
+{ id:5, title:"QUARTERLY RPT",diff:"Hard",   time:1800, reward:650, desc:"Submit Q3 data",       
+  tasks:[
+    {id:'t1',type:'database', label:'Query Data',      desc:'Run SQL'},
+    {id:'t2',type:'analytics',label:'Gen Charts',     desc:'Visualizations'},
+    {id:'t3',type:'printer', label:'Print Report',    desc:'Send to printer'},
+    // NEW TASKS
+    {id:'t4',type:'review',  label:'Review Metrics', desc:'Verify data accuracy'},
+    {id:'t5',type:'memo',    label:'Draft Summary', desc:'Write executive summary'},
+    {id:'t6',type:'approve', label:'Final Approval', desc:'Sign off on report'}
+  ]},
+{ id:6, title:"REMOTE CRISIS",diff:"Expert", time:1800, reward:800, desc:"Support the team",     
+  tasks:[
+    {id:'t1',type:'chat',     label:'Coordinate',      desc:'Manage chats'},
+    {id:'t2',type:'code',     label:'Fix Bug',         desc:'Debug code'},
+    {id:'t3',type:'meeting', label:'Emergency Call',  desc:'Video call'},
+    // NEW TASKS
+    {id:'t4',type:'ping',    label:'Check Servers', desc:'Monitor uptime'},
+    {id:'t5',type:'status',  label:'Update Status Page', desc:'Inform users'},
+    {id:'t6',type:'backup',  label:'Rollback Changes', desc:'Restore stable version'}
+  ]},
+{ id:7, title:"LAUNCH DAY",   diff:"Expert", time:1800, reward:1200,desc:"Deploy the system",    
+  tasks:[
+    {id:'t1',type:'doc',      label:'Final Checklist', desc:'Review docs'},
+    {id:'t2',type:'terminal', label:'Deploy',          desc:'Push to prod'},
+    {id:'t3',type:'security',label:'Monitor',         desc:'Watch cameras'},
+    // NEW TASKS
+    {id:'t4',type:'approve', label:'Approve Launch', desc:'Final sign-off'},
+    {id:'t5',type:'memo',    label:'Announce Launch', desc:'Send company-wide'},
+    {id:'t6',type:'settings',label:'Enable Monitoring', desc:'Activate alerts'}
+  ]},
+];
+
+const SCENE_INFO = {
+0:{title:"YOUR WORKSTATION",  desc:["You arrive at your new","workstation.","Everything awaits."],             action:"BEGIN FIRST DAY"},
+1:{title:"EMAIL INBOX",       desc:["Your","INBOX","overflows with unread messages."],                        action:"PROCESS MESSAGES"},
+2:{title:"DESIGN DEPT",       desc:["The","RENDER FARM","hums. A tablet waits for approvals."],               action:"REVIEW ASSETS"},
+3:{title:"SERVER ROOM",       desc:["ALERT:","INTRUSION","detected on port 4433."],                           action:"ISOLATE THREAT"},
+4:{title:"DATA CENTER",       desc:["The","QUARTERLY DEADLINE","looms. Pull the data."],                      action:"GENERATE REPORT"},
+5:{title:"HOME OFFICE",       desc:["The","PRODUCTION SERVER","is failing. Chat floods with panic."],          action:"STABILIZE SYSTEMS"},
+6:{title:"WAR ROOM",          desc:["It's","LAUNCH DAY.","All eyes on the dashboard."],                       action:"INITIATE DEPLOY"},
+};
+
+// ── ENHANCED APPS ───────────────────────────────────────────────────────────
+
+// NEW: Approve Requests App
+const ApproveApp = memo(({ onComplete }) => {
+  const [requests, setRequests] = useState([
+    {id:1, name:'Budget Request', amount:'$2,450', approved:false},
+    {id:2, name:'Time Off', amount:'3 days', approved:false},
+    {id:3, name:'Equipment', amount:'New monitor', approved:false},
+    {id:4, name:'Software License', amount:'$120/yr', approved:false}
+  ]);
+
+  const approve = (id) => {
+    setRequests(prev => {
+      const updated = prev.map(r => r.id === id ? {...r, approved: true} : r);
+      if (updated.every(r => r.approved)) setTimeout(onComplete, 500);
+      return updated;
+    });
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Approve style={{width:'14px',height:'14px'}}/>APPROVE REQUESTS</div>
+      <div className="approval-grid">
+        {requests.map(req => (
+          <div key={req.id} className={`approval-card ${req.approved ? 'approved' : ''}`} onClick={() => !req.approved && approve(req.id)}>
+            <div style={{fontFamily:"'Press Start 2P'", fontSize:'8px'}}>{req.name}</div>
+            <div style={{fontSize:'9px', color:'var(--accent2)', marginTop:'4px'}}>{req.amount}</div>
+            <div className="status">{req.approved ? 'APPROVED ✓' : 'PENDING'}</div>
+            <div className="check">✓</div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'12px', textAlign:'center'}}>
+        Click cards to approve requests
+      </div>
+    </div>
+  );
+});
+
+// NEW: Update Status App
+const StatusApp = memo(({ onComplete }) => {
+  const [status, setStatus] = useState('available');
+  const statuses = [
+    {value:'available', label:'🟢 Available'},
+    {value:'busy', label:'🔴 In Meeting'},
+    {value:'away', label:'🟡 Away'},
+    {value:'dnd', label:'⚫ Do Not Disturb'}
+  ];
+
+  const handleChange = (e) => {
+    setStatus(e.target.value);
+    setTimeout(onComplete, 400);
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Status style={{width:'14px',height:'14px'}}/>UPDATE STATUS</div>
+      <div style={{fontSize:'10px', marginBottom:'12px'}}>Set your current availability:</div>
+      <select className="status-select" value={status} onChange={handleChange}>
+        {statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+      </select>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'16px', textAlign:'center'}}>
+        Status updated automatically on selection
+      </div>
+    </div>
+  );
+});
+
+// NEW: Send Memo App
+const MemoApp = memo(({ onComplete }) => {
+  const [text, setText] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const send = () => {
+    if (text.trim().length < 10) return;
+    setSent(true);
+    setTimeout(onComplete, 600);
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Memo style={{width:'14px',height:'14px'}}/>SEND MEMO</div>
+      <textarea 
+        className="memo-textarea" 
+        value={text} 
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Type your memo here (min 10 characters)..."
+        disabled={sent}
+      />
+      <button className={`app-btn ok ${sent ? '' : 'disabled'}`} onClick={send} disabled={sent || text.trim().length < 10}>
+        {sent ? 'SENT ✓' : 'SEND MEMO →'}
+      </button>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px', textAlign:'center'}}>
+        {text.length}/200 characters
+      </div>
+    </div>
+  );
+});
+
+// NEW: Review Document App
+const ReviewApp = memo(({ onComplete }) => {
+  const [read, setRead] = useState(false);
+  const doc = `CONFIDENTIAL: Q3 Performance Review
+
+Key Metrics:
+• Revenue: +23% YoY
+• User Growth: +45%
+• Customer Satisfaction: 4.8/5
+
+Action Items:
+1. Scale infrastructure for Q4
+2. Launch mobile app beta
+3. Expand to EU markets
+
+Please review and acknowledge receipt.`;
+
+  useEffect(() => {
+    if (read) setTimeout(onComplete, 400);
+  }, [read]);
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Review style={{width:'14px',height:'14px'}}/>REVIEW DOCUMENT</div>
+      <div className="doc-viewer">{doc}</div>
+      <button className="app-btn ok" onClick={() => setRead(true)} disabled={read}>
+        {read ? 'ACKNOWLEDGED ✓' : '✓ MARK AS READ'}
+      </button>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px', textAlign:'center'}}>
+        Scroll to read, then acknowledge
+      </div>
+    </div>
+  );
+});
+
+// NEW: Configure Settings App
+const SettingsApp = memo(({ onComplete }) => {
+  const [settings, setSettings] = useState({
+    notifications: true,
+    autoSave: false,
+    darkMode: true,
+    compactView: false
+  });
+  const [completed, setCompleted] = useState(false);
+
+  const toggle = (key) => {
+    setSettings(prev => {
+      const updated = {...prev, [key]: !prev[key]};
+      // Complete when at least 2 settings changed from default
+      const changed = Object.keys(updated).filter(k => 
+        (k === 'notifications' && !updated[k]) ||
+        (k === 'autoSave' && updated[k]) ||
+        (k === 'darkMode' && !updated[k]) ||
+        (k === 'compactView' && updated[k])
+      ).length;
+      if (changed >= 2 && !completed) {
+        setCompleted(true);
+        setTimeout(onComplete, 400);
+      }
+      return updated;
+    });
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Settings style={{width:'14px',height:'14px'}}/>CONFIGURE SETTINGS</div>
+      <div className="settings-grid">
+        {Object.entries(settings).map(([key, value]) => (
+          <div key={key} className="setting-row">
+            <span style={{fontSize:'10px', textTransform:'capitalize'}}>{key.replace(/([A-Z])/g, ' $1')}</span>
+            <div className={`toggle-switch ${value ? 'active' : ''}`} onClick={() => toggle(key)}></div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'12px', textAlign:'center'}}>
+        Toggle at least 2 settings to complete
+      </div>
+    </div>
+  );
+});
+
+// NEW: Backup Data App
+const BackupApp = memo(({ onComplete }) => {
+  const [progress, setProgress] = useState(0);
+  const [backingUp, setBackingUp] = useState(false);
+
+  const startBackup = () => {
+    setBackingUp(true);
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) {
+          clearInterval(interval);
+          setTimeout(onComplete, 400);
+          return 100;
+        }
+        return p + Math.random() * 8 + 2;
+      });
+    }, 200);
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Backup style={{width:'14px',height:'14px'}}/>BACKUP DATA</div>
+      <div style={{fontSize:'10px', marginBottom:'8px'}}>Save critical files to secure storage</div>
+      <button className="app-btn ok" onClick={startBackup} disabled={backingUp || progress >= 100}>
+        {progress >= 100 ? 'BACKUP COMPLETE ✓' : backingUp ? 'BACKING UP...' : 'START BACKUP'}
+      </button>
+      <div className="backup-progress">
+        <div className="backup-bar">
+          <div className="backup-fill" style={{width: `${Math.min(progress, 100)}%`}}/>
+        </div>
+        <div style={{fontSize:'8px', color:'var(--ink-dim)', textAlign:'center'}}>{Math.min(Math.round(progress), 100)}%</div>
+      </div>
+    </div>
+  );
+});
+
+// NEW: Test Connection App
+const PingApp = memo(({ onComplete }) => {
+  const [results, setResults] = useState([]);
+  const [testing, setTesting] = useState(false);
+
+  const runPing = () => {
+    setTesting(true);
+    const servers = ['api.corp.local', 'db.corp.local', 'auth.corp.local', 'cdn.corp.local'];
+    let completed = 0;
+    
+    servers.forEach((server, i) => {
+      setTimeout(() => {
+        const success = Math.random() > 0.2;
+        setResults(prev => [...prev, {server, success, time: Math.floor(Math.random() * 100) + 20}]);
+        completed++;
+        if (completed === servers.length) {
+          setTesting(false);
+          setTimeout(onComplete, 500);
+        }
+      }, i * 400);
+    });
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Ping style={{width:'14px',height:'14px'}}/>TEST CONNECTION</div>
+      <button className="app-btn ok" onClick={runPing} disabled={testing}>
+        {testing ? 'PINGING...' : 'RUN DIAGNOSTICS'}
+      </button>
+      <div className="ping-list">
+        {results.map((r, i) => (
+          <div key={i} className={`ping-item ${r.success ? 'success' : 'fail'}`}>
+            <span>{r.server}</span>
+            <span>{r.success ? `✓ ${r.time}ms` : '✗ TIMEOUT'}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px', textAlign:'center'}}>
+        Tests connection to critical services
+      </div>
+    </div>
+  );
+});
+
+// File Organizer App - DRAG AND DROP CATEGORIZATION
+const OrganizeApp = memo(({ onComplete, playSfx }) => {
+  const [files, setFiles] = useState([
+    {id:1, name:'report.pdf', type:'doc', icon:'📄'},
+    {id:2, name:'photo.jpg', type:'image', icon:'🖼️'},
+    {id:3, name:'song.mp3', type:'music', icon:'🎵'},
+    {id:4, name:'video.mp4', type:'video', icon:'🎬'},
+    {id:5, name:'notes.txt', type:'doc', icon:'📄'},
+    {id:6, name:'art.png', type:'image', icon:'🖼️'},
+  ]);
+  
+  const [categories, setCategories] = useState({
+    doc: [],
+    image: [],
+    music: [],
+    video: []
+  });
+  
+  const [draggedFile, setDraggedFile] = useState(null);
+
+  const handleDragStart = (e, file) => {
+    playSfx('click');
+    setDraggedFile(file);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', file.id);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove('drag-over');
+  };
+
+  const handleDrop = (e, category) => {
+    e.preventDefault();
+    playSfx('complete');
+    e.currentTarget.classList.remove('drag-over');
+    
+    if (!draggedFile) return;
+    
+    setCategories(prev => ({
+      ...prev,
+      [category]: [...prev[category], draggedFile]
+    }));
+    
+    setFiles(prev => prev.filter(f => f.id !== draggedFile.id));
+    setDraggedFile(null);
+  };
+
+  useEffect(() => {
+    if (files.length === 0 && Object.values(categories).flat().length === 6) {
+      setTimeout(onComplete, 600);
+    }
+  }, [files, categories, onComplete]);
+
+  const categoryIcons = {
+    doc: '📁',
+    image: '🖼️',
+    music: '🎵',
+    video: '🎬'
+  };
+
+  const categoryLabels = {
+    doc: 'DOCUMENTS',
+    image: 'IMAGES',
+    music: 'MUSIC',
+    video: 'VIDEOS'
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Folder style={{width:'14px',height:'14px'}}/>ORGANIZE FILES — DRAG FILES TO CATEGORIES</div>
+      <div className="file-organizer">
+        <div className="file-categories">
+          {Object.keys(categories).map(cat => (
+            <div 
+              key={cat}
+              className={`category-box ${categories[cat].length > 0 ? 'filled' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, cat)}
+            >
+              <div className="category-icon">{categoryIcons[cat]}</div>
+              <div className="category-label">{categoryLabels[cat]}</div>
+              <div style={{fontSize:'8px', color:'var(--accent3)'}}>{categories[cat].length}/2</div>
+            </div>
+          ))}
+        </div>
+        <div className="file-pool">
+          <div style={{fontSize:'8px', color:'var(--ink-dim)', marginBottom:'8px'}}>DRAG THESE FILES:</div>
+          {files.map(file => (
+            <div 
+              key={file.id}
+              className="file-item"
+              draggable
+              onDragStart={(e) => handleDragStart(e, file)}
+            >
+              <span>{file.icon}</span>
+              <span>{file.name}</span>
+            </div>
+          ))}
+          {files.length === 0 && <div style={{textAlign:'center', color:'var(--accent3)', padding:'20px'}}>ALL FILES ORGANIZED ✓</div>}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Checklist App - CHECKBOXES
+const ChecklistApp = memo(({ onComplete, playSfx }) => {
+  const [items, setItems] = useState([
+    {id:1, text:'Review security protocols', checked:false},
+    {id:2, text:'Verify system backups', checked:false},
+    {id:3, text:'Update firewall rules', checked:false},
+    {id:4, text:'Test emergency procedures', checked:false},
+  ]);
+
+  const toggleItem = (id) => {
+    playSfx('click');
+    const updated = items.map(item => 
+      item.id === id ? {...item, checked: !item.checked} : item
+    );
+    setItems(updated);
+    
+    if (updated.every(item => item.checked)) {
+      playSfx('success');
+      setTimeout(onComplete, 600);
+    }
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Doc style={{width:'14px',height:'14px'}}/>FINAL CHECKLIST</div>
+      {items.map(item => (
+        <div 
+          key={item.id}
+          className={`checklist-item ${item.checked ? 'checked' : ''}`}
+          onClick={() => toggleItem(item.id)}
+        >
+          <div className="checkbox">
+            <I.Check />
+          </div>
+          <span style={{fontSize:'10px'}}>{item.text}</span>
+        </div>
+      ))}
+      <div style={{marginTop:'12px', fontSize:'8px', color:'var(--ink-dim)', textAlign:'center'}}>
+        Click items to check them off
+      </div>
+    </div>
+  );
+});
+
+// Signature Pad App - MOUSE DRAWING
+const SignatureApp = memo(({ onComplete, playSfx }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSigned, setHasSigned] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#00d4aa';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }, []);
+
+  const getCoords = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const startDrawing = (e) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    setHasSigned(true);
+    playSfx('click');
+    const ctx = canvasRef.current.getContext('2d');
+    const {x, y} = getCoords(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current.getContext('2d');
+    const {x, y} = getCoords(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    playSfx('click');
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSigned(false);
+  };
+
+  const submitSignature = () => {
+    if (hasSigned) {
+      playSfx('success');
+      setTimeout(onComplete, 600);
+    } else {
+      playSfx('error');
+    }
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Tablet style={{width:'14px',height:'14px'}}/>SIGN DOCUMENT — DRAW YOUR SIGNATURE</div>
+      <div className="signature-pad">
+        <canvas 
+          ref={canvasRef}
+          width={380}
+          height={180}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+      </div>
+      <div style={{display:'flex', gap:'8px', marginTop:'12px'}}>
+        <button className="app-btn" onClick={clearSignature} style={{flex:1}}>CLEAR</button>
+        <button className="app-btn ok" onClick={submitSignature} disabled={!hasSigned} style={{flex:1}}>SUBMIT</button>
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px', textAlign:'center'}}>
+        Use your mouse to sign above
+      </div>
+    </div>
+  );
+});
+
+// Coffee App - Now just shows instruction
+const CoffeeApp = memo(({ onComplete, playSfx }) => {
+  return (
+    <div className="app-inner" style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'16px'}}>
+      <I.Coffee style={{width:'48px', height:'48px', stroke:'var(--accent2)'}}/>
+      <div style={{fontFamily:"'Press Start 2P'", fontSize:'10px', textAlign:'center', color:'var(--accent2)'}}>
+        CLICK THE COFFEE<br/>IN YOUR INVENTORY
+      </div>
+      <div style={{fontSize:'9px', color:'var(--ink-dim)', textAlign:'center'}}>
+        (Top left sidebar)
+      </div>
+    </div>
+  );
+});
+
+const SheetApp = memo(({ onComplete, playSfx }) => {
+  const [cells, setCells] = useState(() => {
+    const data = {};
+    for (let row = 1; row <= 8; row++) {
+      for (let col = 1; col <= 5; col++) {
+        const key = `${String.fromCharCode(64+col)}${row}`;
+        if (row === 2 && col === 2) data[key] = '150';
+        else if (row === 2 && col === 3) data[key] = '200';
+        else if (row === 2 && col === 4) data[key] = '175';
+        else if (row === 3 && col === 2) data[key] = '300';
+        else if (row === 3 && col === 3) data[key] = '250';
+        else if (row === 3 && col === 4) data[key] = '225';
+        else data[key] = '';
+      }
+    }
+    return data;
+  });
+  const [selected, setSelected] = useState(null);
+  const [fixedCols, setFixedCols] = useState(new Set());
+  const [formula, setFormula] = useState('');
+  const [chartData, setChartData] = useState(null);
+  const inputRef = useRef(null);
+
+  const handleCellClick = (cellId) => {
+    playSfx('click');
+    if (fixedCols.has(cellId[0])) return;
+    setSelected(cellId);
+    setFormula(cells[cellId] || '');
+    setTimeout(() => inputRef.current?.focus(), 10);
+  };
+
+  const handleCellChange = (cellId, value) => {
+    if (fixedCols.has(cellId[0])) return;
+    if (value.startsWith('=')) {
+      const result = evaluateFormula(value, cells);
+      setCells(prev => ({...prev, [cellId]: result}));
+    } else {
+      setCells(prev => ({...prev, [cellId]: value}));
+    }
+    setFormula(value);
+  };
+
+  const evaluateFormula = (formula, cellData) => {
+    try {
+      const expr = formula.substring(1).toUpperCase();
+      if (expr.startsWith('SUM(')) {
+        const range = expr.match(/SUM\(([A-Z]\d+):([A-Z]\d+)\)/i);
+        if (range) {
+          let total = 0;
+          const [_, start, end] = range;
+          const startCol = start.charCodeAt(0) - 64;
+          const endCol = end.charCodeAt(0) - 64;
+          const startRow = parseInt(start.slice(1));
+          const endRow = parseInt(end.slice(1));
+          for (let col = startCol; col <= endCol; col++) {
+            for (let row = startRow; row <= endRow; row++) {
+              const key = `${String.fromCharCode(64+col)}${row}`;
+              total += parseFloat(cellData[key]) || 0;
+            }
+          }
+          return total.toString();
+        }
+      }
+      else if (expr.startsWith('AVERAGE(')) {
+        const range = expr.match(/AVERAGE\(([A-Z]\d+):([A-Z]\d+)\)/i);
+        if (range) {
+          let total = 0, count = 0;
+          const [_, start, end] = range;
+          const startCol = start.charCodeAt(0) - 64;
+          const endCol = end.charCodeAt(0) - 64;
+          const startRow = parseInt(start.slice(1));
+          const endRow = parseInt(end.slice(1));
+          for (let col = startCol; col <= endCol; col++) {
+            for (let row = startRow; row <= endRow; row++) {
+              const key = `${String.fromCharCode(64+col)}${row}`;
+              const val = parseFloat(cellData[key]);
+              if (!isNaN(val)) { total += val; count++; }
+            }
+          }
+          return count > 0 ? (total/count).toFixed(1) : '0';
+        }
+      }
+      else if (expr.startsWith('MULTIPLY(')) {
+        const cells = expr.match(/MULTIPLY\(([A-Z]\d+),([A-Z]\d+)\)/i);
+        if (cells) {
+          const val1 = parseFloat(cellData[cells[1]]) || 0;
+          const val2 = parseFloat(cellData[cells[2]]) || 0;
+          return (val1 * val2).toString();
+        }
+      }
+      return '#ERR';
+    } catch { return '#ERR'; }
+  };
+
+  const toggleFixColumn = (col) => {
+    playSfx('click');
+    setFixedCols(prev => {
+      const next = new Set(prev);
+      if (next.has(col)) next.delete(col); else next.add(col);
+      return next;
+    });
+  };
+
+  const generateChart = () => {
+    playSfx('complete');
+    const labels = ['B', 'C', 'D', 'E'].map(c => cells[`${c}1`] || c);
+    const values = [2,3,4,5].map(c => parseFloat(cells[`${String.fromCharCode(64+c)}2`]) || 0);
+    const maxValue = Math.max(...values, 1);
+    setChartData({ labels, values: values.map(v => (v / maxValue) * 100), rawValues: values });
+  };
+
+  const exportCSV = () => {
+    playSfx('success');
+    let csv = ',"A","B","C","D","E"\n';
+    for (let row = 1; row <= 8; row++) {
+      csv += `"${row}"`;
+      for (let col = 1; col <= 5; col++) {
+        const key = `${String.fromCharCode(64+col)}${row}`;
+        csv += `,"${cells[key] || ''}"`;
+      }
+      csv += '\n';
+    }
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'officeops_sheet.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const columns = ['A','B','C','D','E'];
+  const rows = [1,2,3,4,5,6,7,8];
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Sheet style={{width:'14px',height:'14px'}}/>SPREADSHEET</div>
+      <div className="sheet-toolbar">
+        {columns.map(col => (
+          <button key={col} className={`sheet-btn ${fixedCols.has(col) ? 'active' : ''}`} onClick={() => toggleFixColumn(col)}>
+            <I.Fix style={{width:'12px',height:'12px'}}/> {col}
+          </button>
+        ))}
+        <button className="sheet-btn" onClick={generateChart}><I.Chart style={{width:'12px',height:'12px'}}/> Chart</button>
+        <button className="sheet-btn" onClick={exportCSV}><I.Download style={{width:'12px',height:'12px'}}/> CSV</button>
+      </div>
+      <div className="formula-bar">
+        <span style={{fontSize:'9px',color:'var(--ink-dim)'}}>fx:</span>
+        <input className="formula-input" value={formula} onChange={(e) => { setFormula(e.target.value); if (selected) handleCellChange(selected, e.target.value); }} placeholder="=SUM(B2:D2)"/>
+      </div>
+      <div className="sheet-grid">
+        <div className="sheet-cell header"></div>
+        {columns.map(col => (
+          <div key={col} className="sheet-cell header" style={{cursor:'pointer'}} onClick={() => toggleFixColumn(col)}>
+            {col}{fixedCols.has(col) && ' 🔒'}
+          </div>
+        ))}
+        {rows.map(row => (
+          <Fragment key={row}>
+            <div className="sheet-cell header">{row}</div>
+            {columns.map(col => {
+              const cellId = `${col}${row}`;
+              const isFixed = fixedCols.has(col);
+              const isSelected = selected === cellId;
+              return (
+                <div key={cellId} className={`sheet-cell ${isFixed ? 'fixed' : ''} ${isSelected ? 'selected' : ''}`} onClick={() => handleCellClick(cellId)}>
+                  {isSelected && !isFixed ? (
+                    <input ref={isSelected ? inputRef : null} value={formula} onChange={(e) => handleCellChange(cellId, e.target.value)} onBlur={() => setSelected(null)} onKeyDown={(e) => { if (e.key === 'Enter') { setSelected(null); if (row === 4 && col === 'E' && cells[cellId]) setTimeout(onComplete, 400); }}}/>
+                  ) : (
+                    <span>{cells[cellId] || ''}</span>
+                  )}
+                </div>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      {chartData && (
+        <div className="chart-preview">
+          <div className="chart-title">BUDGET CHART</div>
+          <div className="chart-container">
+            {chartData.values.map((height, i) => (
+              <div key={i} className="chart-bar" style={{height: `${height}%`}} data-value={chartData.rawValues[i]}/>
+            ))}
+          </div>
+          <div className="chart-labels">{chartData.labels.map((l, i) => <span key={i}>{l}</span>)}</div>
+        </div>
+      )}
+      <div className="export-section">
+        <button className="app-btn ok export-btn" onClick={onComplete}>✓ COMPLETE</button>
+      </div>
+    </div>
+  );
+});
+
+const EmailApp = memo(({ onComplete, playSfx }) => {
+  const [emails, setEmails] = useState([
+    {id:1, from:'hr@corp.com',  subject:'Welcome!',       body:'Welcome to the team!', read:false, priority:'normal'},
+    {id:2, from:'it@corp.com',  subject:'System Access',  body:'Change password now.', read:false, priority:'normal'},
+    {id:3, from:'ceo@corp.com', subject:'URGENT: Q3 Doc', body:'Review ASAP.',   read:false, priority:'urgent'},
+    {id:4, from:'client@biz.com', subject:'Project Update', body:'Milestone reached.', read:false, priority:'normal'}
+  ]);
+  const [sel, setSel] = useState(null);
+  const [reply, setReply] = useState('');
+  const [sent, setSent] = useState(0);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  const filteredEmails = emails.filter(em => {
+    const matchesSearch = em.subject.toLowerCase().includes(search.toLowerCase()) || em.from.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'all' || (filter === 'urgent' && em.priority === 'urgent') || (filter === 'unread' && !em.read);
+    return matchesSearch && matchesFilter;
+  });
+
+  const handleReply = () => {
+    if (!sel || !reply.trim()) return;
+    playSfx('success');
+    const ns = sent + 1;
+    setSent(ns);
+    setEmails(e => e.filter(em => em.id !== sel.id));
+    setSel(null); setReply('');
+    if (ns >= 3) setTimeout(onComplete, 300);
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Email style={{width:'14px',height:'14px'}}/>MAIL — {sent}/3 REPLIED</div>
+      <div style={{display:'flex', gap:'8px', marginBottom:'10px'}}>
+        <input className="app-input" placeholder="🔍 Search..." value={search} onChange={(e) => setSearch(e.target.value)} style={{flex:1, fontSize:'10px'}}/>
+        <select className="app-input" value={filter} onChange={(e) => setFilter(e.target.value)} style={{width:'100px', fontSize:'10px'}}>
+          <option value="all">All</option>
+          <option value="urgent">Urgent</option>
+          <option value="unread">Unread</option>
+        </select>
+      </div>
+      <div style={{display:'flex', gap:'10px', height:'220px'}}>
+        <div style={{width:'48%', overflowY:'auto', borderRight:'1px solid #2a3a5c', paddingRight:'10px'}}>
+          {filteredEmails.map(em => (
+            <div key={em.id} className={`email-row ${sel?.id===em.id?'selected':''} ${em.read&&sel?.id!==em.id?'read':''}`} onClick={() => { playSfx('click'); setSel(em); setEmails(e=>e.map(x=>x.id===em.id?{...x,read:true}:x)); }}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <span style={{fontSize:'9px'}}>{em.from}</span>
+                {em.priority === 'urgent' && <span className="badge-urgent">!</span>}
+              </div>
+              <div style={{fontSize:'10px', color:'var(--ink-dim)', marginTop:'3px'}}>{em.subject}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{flex:1, display:'flex', flexDirection:'column', gap:'8px'}}>
+          {sel ? <>
+            <div style={{fontFamily:"'Press Start 2P'", fontSize:'8px', color:'var(--accent2)', borderBottom:'1px solid #2a3a5c', paddingBottom:'6px'}}>{sel.subject}</div>
+            <div style={{flex:1, fontSize:'10px', lineHeight:'1.7', color:'var(--ink-dim)', overflowY:'auto'}}>{sel.body}</div>
+            <textarea className="app-input" style={{height:'64px'}} value={reply} onChange={e=>setReply(e.target.value)} placeholder="> REPLY..."/>
+            <button className="app-btn ok" onClick={handleReply}>SEND →</button>
+          </> : <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', color:'var(--ink-dim)'}}>SELECT EMAIL</div>}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const PhoneApp = memo(({ onComplete, playSfx }) => {
+  const [calls, setCalls] = useState([
+    {id:1, name:'CLIENT A',  num:'+1 234-5678', status:'missed'},
+    {id:2, name:'SUPPORT',   num:'EXT 4521',    status:'voicemail'},
+    {id:3, name:'DIRECTOR',  num:'+1 234-9012', status:'missed'}
+  ]);
+  const [active, setActive] = useState(null);
+  const [answered, setAnswered] = useState(0);
+  const timerRef = useRef(null);
+
+  const dial = (call) => {
+    if (call.status === 'answered' || active !== null) return;
+    playSfx('click');
+    setActive(call.id);
+    timerRef.current = setTimeout(() => {
+      playSfx('success');
+      setActive(null);
+      setAnswered(prev => {
+        const na = prev + 1;
+        setCalls(c => c.map(x => x.id===call.id ? {...x, status:'answered'} : x));
+        if (na >= 3) setTimeout(onComplete, 400);
+        return na;
+      });
+    }, 1800);
+  };
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  return <div className="app-inner">
+    <div className="app-h"><I.Phone style={{width:'14px',height:'14px'}}/> CALL LOG — {answered}/3</div>
+    {calls.map(c => <div key={c.id} className={`call-row ${c.status==='answered'?'answered-row':''}`} onClick={() => dial(c)}>
+      <div><div style={{fontFamily:"'Press Start 2P'", fontSize:'9px'}}>{c.name}</div><div style={{fontSize:'10px', color:'var(--ink-dim)'}}>{c.num}</div></div>
+      <div>{active===c.id ? <div className="dot-wave"><span/><span/><span/></div> : <span style={{fontSize:'9px', color: c.status==='answered'?'var(--accent3)':'var(--ink-dim)'}}>{c.status.toUpperCase()}</span>}</div>
+    </div>)}
+  </div>;
+});
+
+const CalendarApp = memo(({ onComplete, playSfx }) => {
+  const [events, setEvents] = useState([
+    {id:1, title:'TEAM STANDUP',   time:'09:00', done:false},
+    {id:2, title:'CLIENT MEETING', time:'14:00', done:false},
+    {id:3, title:'PROJECT REVIEW', time:'16:00', done:false}
+  ]);
+  const toggle = id => {
+    playSfx('click');
+    const updated = events.map(e => e.id===id ? {...e, done:!e.done} : e);
+    setEvents(updated);
+    if (updated.every(e => e.done)) {
+      playSfx('success');
+      setTimeout(onComplete, 400);
+    }
+  };
+  return <div className="app-inner">
+    <div className="app-h"><I.Calendar style={{width:'14px',height:'14px'}}/> SCHEDULE</div>
+    {events.map(e => <div key={e.id} className={`cal-row ${e.done?'done-row':''}`} onClick={() => toggle(e.id)}>
+      <div style={{fontFamily:"'Press Start 2P'", fontSize:'8px', color: e.done?'var(--accent3)':'var(--ink)'}}>{e.title}</div>
+      <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+        <span style={{fontSize:'10px', color:'var(--ink-dim)'}}>{e.time}</span>
+        <div style={{width:'18px', height:'18px', border:'1px solid', borderColor: e.done?'var(--accent3)':'#2a3a5c', display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'3px', color:'var(--accent3)'}}>
+          {e.done && <I.Check style={{width:'12px', height:'12px'}}/>}
+        </div>
+      </div>
+    </div>)}
+  </div>;
+});
+
+// ── OTHER APPS ───────────────────────────────────────────────────────────
+
+const TerminalApp = memo(({ onComplete, playSfx }) => {
+  const [lines, setLines] = useState(['> SYSTEM BOOT... OK', '> WAITING FOR INPUT...']);
+  const [input, setInput] = useState('');
+  const inputRef = useRef(null);
+  
+  useEffect(() => inputRef.current?.focus(), []);
+
+  const handleCmd = (e) => {
+    if (e.key === 'Enter') {
+      playSfx('click');
+      const cmd = input.trim().toLowerCase();
+      let response = `> UNKNOWN COMMAND: ${cmd}`;
+      if (cmd === 'scan') response = '> SCANNING PORTS... 443 OPEN. THREAT DETECTED.';
+      else if (cmd === 'fix') {
+        response = '> PATCHING VULNERABILITY... SUCCESS.';
+        playSfx('success');
+      }
+      else if (cmd === 'clear') response = '> CONSOLE CLEARED.';
+      
+      setLines(prev => [...prev, `> ${input}`, response]);
+      setInput('');
+      
+      if (cmd === 'fix') setTimeout(onComplete, 600);
+    }
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Terminal style={{width:'14px',height:'14px'}}/> TERMINAL</div>
+      <div className="terminal-output">
+        {lines.map((l, i) => <div key={i} style={{marginBottom:'4px'}}>{l}</div>)}
+      </div>
+      <div style={{display:'flex', gap:'8px'}}>
+        <span style={{color:'var(--accent3)', fontFamily:'monospace'}}>{'>'}</span>
+        <input 
+          className="app-input" 
+          value={input} 
+          onChange={e => setInput(e.target.value)} 
+          onKeyDown={handleCmd}
+          ref={inputRef}
+          style={{flex:1, border:'none', background:'transparent', color:'var(--accent3)'}}
+          placeholder="Type 'scan' or 'fix'..."
+        />
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px'}}>Hint: Scan for threats, then fix them.</div>
+    </div>
+  );
+});
+
+const ChatApp = memo(({ onComplete, playSfx }) => {
+  const [msgs, setMsgs] = useState([
+    {id:1, text:"Server is down!", sender:"Dev", type:"urgent"},
+    {id:2, text:"Can we delay launch?", sender:"PM", type:"neutral"}
+  ]);
+  const [replied, setReplied] = useState(0);
+  
+  const reply = (id, tone) => {
+    playSfx('click');
+    setMsgs(prev => prev.filter(m => m.id !== id));
+    setReplied(p => {
+      const n = p + 1;
+      if (n >= 2) {
+        playSfx('success');
+        setTimeout(onComplete, 400);
+      }
+      return n;
+    });
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Chat style={{width:'14px',height:'14px'}}/> CHAT — {replied}/2</div>
+      {msgs.map(m => (
+        <div key={m.id} className="chat-msg">
+          <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
+            <span style={{color:'var(--accent2)', fontWeight:'bold'}}>{m.sender}</span>
+            {m.type === 'urgent' && <span className="badge-urgent">!</span>}
+          </div>
+          <div style={{marginBottom:'6px'}}>{m.text}</div>
+          <div className="chat-options">
+            <button className="chat-opt-btn" onClick={() => reply(m.id, 'ack')}>Acknowledge</button>
+            <button className="chat-opt-btn" onClick={() => reply(m.id, 'solve')}>Solve</button>
+          </div>
+        </div>
+      ))}
+      {msgs.length === 0 && <div style={{textAlign:'center', color:'var(--accent3)', padding:'20px'}}>INBOX CLEAR ✓</div>}
+    </div>
+  );
+});
+
+const RenderApp = memo(({ onComplete, playSfx }) => {
+  const [heat, setHeat] = useState(20);
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setHeat(h => Math.min(100, h + 2));
+      setProgress(p => {
+        const next = p + (heat < 80 ? 12 : 4);
+        if (next >= 100) { 
+          clearInterval(timerRef.current); 
+          playSfx('success');
+          setTimeout(onComplete, 400); 
+          return 100; 
+        }
+        return next;
+      });
+    }, 200);
+    return () => clearInterval(timerRef.current);
+  }, [heat, playSfx, onComplete]);
+
+  const vent = () => {
+    playSfx('click');
+    setHeat(h => Math.max(0, h - 15));
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Render style={{width:'14px',height:'14px'}}/> RENDER FARM</div>
+      <div style={{marginBottom:'8px'}}>Heat Level</div>
+      <div className="render-heat-bar">
+        <div className="render-heat-fill" style={{width: `${heat}%`, background: heat > 80 ? 'var(--accent)' : 'var(--accent3)'}}/>
+      </div>
+      <button className="app-btn" onClick={vent} style={{width:'100%', marginBottom:'12px'}}>️ VENT HEAT</button>
+      
+      <div style={{marginBottom:'8px'}}>Progress</div>
+      <div className="progress-bar">
+        <div className="progress-fill" style={{width: `${progress}%`}}/>
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'4px'}}>Keep heat low to render!</div>
+    </div>
+  );
+});
+
+const USBApp = memo(({ onComplete, playSfx }) => {
+  const [files, setFiles] = useState(() => {
+    const f = [];
+    for(let i=0; i<12; i++) f.push({id:i, infected: Math.random() > 0.6, clean: false});
+    return f;
+  });
+  
+  const clean = (id) => {
+    playSfx('click');
+    setFiles(prev => prev.map(f => f.id === id ? {...f, clean: true} : f));
+  };
+
+  useEffect(() => {
+    if (files.length > 0 && files.every(f => f.clean || !f.infected)) {
+       const infectedLeft = files.filter(f => f.infected && !f.clean).length;
+       if (infectedLeft === 0) {
+         playSfx('success');
+         setTimeout(onComplete, 400);
+       }
+    }
+  }, [files, playSfx, onComplete]);
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.USB style={{width:'14px',height:'14px'}}/> USB SCAN</div>
+      <div className="usb-grid">
+        {files.map(f => (
+          <div 
+            key={f.id} 
+            className={`usb-file ${f.infected && !f.clean ? 'infected' : ''} ${f.clean ? 'quarantined' : ''}`}
+            onClick={() => f.infected && !f.clean && clean(f.id)}
+          >
+            {f.clean ? '✅' : f.infected ? '☣️' : '📄'}
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', textAlign:'center'}}>Click infected files (☣️) to quarantine.</div>
+    </div>
+  );
+});
+
+const MeetingApp = memo(({ onComplete, playSfx }) => {
+  const [attention, setAttention] = useState(50);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setAttention(a => {
+        if (a <= 0) { clearInterval(timerRef.current); return 0; }
+        return a - 2;
+      });
+    }, 500);
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  const engage = () => setAttention(a => Math.min(100, a + 15));
+
+  const [clicks, setClicks] = useState(0);
+  const handleEngage = () => {
+    playSfx('click');
+    engage();
+    setClicks(c => {
+      if (c + 1 >= 5) { 
+        playSfx('success');
+        setTimeout(onComplete, 400); 
+        return 5; 
+      }
+      return c + 1;
+    });
+  };
+
+  return (
+    <div className="app-inner">
+      <div className="app-h"><I.Meeting style={{width:'14px',height:'14px'}}/> VIDEO CALL</div>
+      <div style={{marginBottom:'8px'}}>Team Attention</div>
+      <div className="meeting-bar">
+        <div className="meeting-fill" style={{width: `${attention}%`}}/>
+      </div>
+      <button className="app-btn" onClick={handleEngage} style={{width:'100%'}}>🗣️ SPEAK UP</button>
+      <div style={{fontSize:'8px', color:'var(--ink-dim)', marginTop:'8px', textAlign:'center'}}>Keep them engaged! (Click 5 times)</div>
+    </div>
+  );
+});
+
+// ── DRAGGABLE WINDOW ───────────────────────────────────────────────────────
+const DraggableWindow = memo(({ id, title, icon: Icon, isActive, onClose, onMinimize, onFocus, children, containerSize, playSfx }) => {
+  const W=420, H=380;
+  const [pos, setPos] = useState({ x: 40 + Math.random()*80, y: 40 + Math.random()*40 });
+  const [dragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState({x:0,y:0});
+  const ref = useRef(null);
+  const animRef = useRef(null);
+
+  const onMouseDown = e => {
+    playSfx('click');
+    if (e.target.closest('.win-controls')) return;
+    const r = ref.current.getBoundingClientRect();
+    setDragging(true);
+    setOffset({x: e.clientX - r.left, y: e.clientY - r.top});
+    onFocus(id);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const move = e => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      animRef.current = requestAnimationFrame(() => {
+        const newX = Math.max(10, Math.min(e.clientX - offset.x, containerSize.w - W - 10));
+        const newY = Math.max(10, Math.min(e.clientY - offset.y, containerSize.h - H - 10));
+        setPos({x: newX, y: newY});
+      });
+    };
+    const up = () => {
+      setDragging(false);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+    window.addEventListener('mousemove', move, { passive: true });
+    window.addEventListener('mouseup', up);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [dragging, offset, containerSize]);
+
+  return <div ref={ref} className={`os-window ${isActive?'active':''}`}
+    style={{left:pos.x, top:pos.y, width:W, height:H, willChange: dragging ? 'transform' : 'auto'}}
+    onMouseDown={() => {playSfx('click'); onFocus(id);}}>
+    <div className="window-titlebar" onMouseDown={onMouseDown}>
+      <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+        {Icon && <Icon style={{width:'14px', height:'14px', stroke:'var(--accent2)'}}/>}
+        <span className="win-title">{title}</span>
+      </div>
+      <div className="win-controls">
+        <button className="win-btn min-btn" onClick={e=>{e.stopPropagation();playSfx('click');onMinimize(id);}}>_</button>
+        <button className="win-btn close-btn" onClick={e=>{e.stopPropagation();playSfx('click');onClose(id);}}>×</button>
+      </div>
+    </div>
+    <div className="window-body">{children}</div>
+  </div>;
+});
+
+// ── SCENE BACKGROUND ───────────────────────────────────────────────────────
+const SceneArt = memo(({ epIdx }) => {
+  const colors = [
+    {sky:'#050810', horizon:'#0a1628', accent:'#1a3a6c', star:'rgba(100,160,255,0.7)'},
+    {sky:'#080510', horizon:'#1a0a28', accent:'#3a1a6c', star:'rgba(200,100,255,0.6)'},
+    {sky:'#081008', horizon:'#0a2810', accent:'#1a5c2a', star:'rgba(100,255,100,0.5)'},
+    {sky:'#100505', horizon:'#280a0a', accent:'#6c1a1a', star:'rgba(255,100,100,0.6)'},
+    {sky:'#050a10', horizon:'#0a1a28', accent:'#0a2a5c', star:'rgba(100,200,255,0.6)'},
+    {sky:'#080810', horizon:'#101028', accent:'#1a1a6c', star:'rgba(180,150,255,0.6)'},
+    {sky:'#100808', horizon:'#200a0a', accent:'#5c0a0a', star:'rgba(255,120,80,0.6)'},
+  ];
+  const c = colors[epIdx % colors.length];
+  const stars = Array.from({length:60},(_,i)=>({
+    x: (Math.sin(i*137.5)*0.5+0.5)*600, y: (Math.cos(i*97.3)*0.5+0.5)*160, s: 1+Math.random()*2.5, o: 0.3+Math.random()*0.7
+  }));
+  return <svg viewBox="0 0 600 360" style={{width:'100%',height:'100%',position:'absolute',inset:0}} preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id={`sg${epIdx}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={c.sky}/><stop offset="100%" stopColor={c.horizon}/>
+      </linearGradient>
+      <linearGradient id={`fg${epIdx}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={c.accent}/><stop offset="100%" stopColor={c.sky}/>
+      </linearGradient>
+    </defs>
+    <rect width="600" height="360" fill={`url(#sg${epIdx})`}/>
+    {stars.map((s,i)=><circle key={i} cx={s.x} cy={s.y} r={s.s} fill={c.star} opacity={s.o}/>)}
+    <rect x="0" y="200" width="600" height="160" fill={c.horizon}/>
+    {[0,35,70,110,150,185,220,265,305,345,390,430,465,510,545].map((x,i)=>{
+      const h = 45+i%5*20; const w = 20+i%3*10;
+      return <g key={i}>
+        <rect x={x} y={200-h} width={w} height={h} fill={c.accent} opacity={0.7}/>
+        {Array.from({length:Math.floor(h/16)},(_,r)=>Array.from({length:Math.floor(w/10)},(_,col)=>
+          <rect key={`${r}-${col}`} x={x+col*10+3} y={200-h+r*16+5} width={6} height={8} fill={Math.random()>0.4?'rgba(255,220,100,0.85)':'rgba(100,180,255,0.35)'} opacity={Math.random()>0.3?0.95:0}/>
+        ))}
+      </g>;
+    })}
+    <rect x="0" y="260" width="600" height="100" fill={c.sky} opacity={0.95}/>
+    {Array.from({length:9},(_,i)=><line key={i} x1="0" y1={265+i*13} x2="600" y2={265+i*13} stroke="rgba(255,255,255,0.05)" strokeWidth="0.6"/>)}
+    {Array.from({length:22},(_,i)=><line key={i} x1={i*28} y1="260" x2={i*28} y2="360" stroke="rgba(255,255,255,0.04)" strokeWidth="0.6"/>)}
+  </svg>;
+});
+
+const OpsDashboard = memo(({ epIdx, onOpsClick, playSfx }) => (
+<div className="ops-grid">
+  {[
+    {icon:'🎯', label:'MISSIONS', count:3, action:'target'},
+    {icon:'🛡️', label:'SECURITY', count:1, action:'shield'},
+    {icon:'⚠️', label:'ALERTS', count:2, action:'alert'},
+    {icon:'⭐', label:'RANK', count:epIdx+1, action:'star'},
+  ].map((op,i) => (
+    <div key={i} className="ops-card" onClick={() => {playSfx('click'); onOpsClick(op.action);}}>
+      <span className="icon">{op.icon}</span>
+      <div className="label">{op.label}</div>
+      <div className="count">{op.count}</div>
+    </div>
+  ))}
+</div>
+));
+
+const Notifs = memo(({ notifs, onRemove, playSfx }) => (
+<div className="notif-area">
+  {notifs.map(n=><div key={n.id} className={`notif ${n.type}`} onClick={()=>{playSfx('notification');onRemove(n.id);}}>
+    <div className={`notif-dot ${n.type}`}/>
+    <span>{n.message}</span>
+    <button onClick={(e)=>{e.stopPropagation();playSfx('click');onRemove(n.id);}} style={{background:'none',border:'none',color:'var(--ink-dim)',cursor:'pointer',fontSize:'14px',padding:'0 0 0 8px',marginLeft:'auto'}}>×</button>
+  </div>)}
+</div>
+));
+
+const DESK_ICONS = [
+  {t:'email',    l:'MAIL',   i:I.Email},
+  {t:'phone',    l:'PHONE',  i:I.Phone},
+  {t:'calendar', l:'SCHED',  i:I.Calendar},
+  {t:'terminal', l:'TERM',   i:I.Terminal},
+  {t:'network',  l:'NET',    i:I.Network},
+  {t:'code',     l:'CODE',   i:I.Code},
+  {t:'database', l:'DB',     i:I.Database},
+  {t:'analytics',l:'STATS',  i:I.Analytics},
+  {t:'printer',  l:'PRINT',  i:I.Printer},
+  {t:'security', l:'CAM',    i:I.Camera},
+  {t:'sheet',    l:'SHEET',  i:I.Sheet},
+  {t:'chat',     l:'CHAT',   i:I.Chat},
+  {t:'approve',  l:'APPR',   i:I.Approve},
+  {t:'status',   l:'STAT',   i:I.Status},
+  {t:'memo',     l:'MEMO',   i:I.Memo},
+  {t:'review',   l:'REV',    i:I.Review},
+  {t:'settings', l:'SET',    i:I.Settings},
+  {t:'backup',   l:'BAK',    i:I.Backup},
+  {t:'ping',     l:'PING',   i:I.Ping},
+];
+
+const loadProgress = () => {
+  try { return JSON.parse(localStorage.getItem('oo_v43')||'{"completed":[],"score":0}'); }
+  catch { return {completed:[],score:0}; }
+};
+const saveProgress = p => { try { localStorage.setItem('oo_v43', JSON.stringify(p)); } catch {} };
+
+// ── MAIN GAME ──────────────────────────────────────────
+const Game = () => {
+  const [screen, setScreen] = useState('menu');
+  const [epIdx, setEpIdx] = useState(0);
+  const [tasks, setTasks] = useState([]);
+  const [time, setTime] = useState(0);
+  const [stats, setStats] = useState({focus:80, stress:20, energy:90});
+  const [windows, setWindows] = useState([]);
+  const [activeWin, setActiveWin] = useState(null);
+  const [minimized, setMinimized] = useState([]);
+  const [notifs, setNotifs] = useState([]);
+  const [containerSize, setContainerSize] = useState({w:600,h:360});
+  const [gameTime, setGameTime] = useState('09:00am');
+  const [progress, setProgress] = useState(loadProgress);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [draggedTask, setDraggedTask] = useState(null);
+  const [dragPreview, setDragPreview] = useState(null);
+  
+  const [inventory, setInventory] = useState({
+    coffee: 3,
+    bag: 5,
+    headset: 2,
+    docs: 7
+  });
+
+  const sceneRef = useRef(null);
+  const timerRef = useRef(null);
+  const clockRef = useRef(null);
+  const completedRef = useRef(false);
+  const saveTimerRef = useRef(null);
+  
+  // Initialize audio system
+  const audio = useAudio();
+
+  useEffect(() => {
+    saveTimerRef.current = setInterval(() => { saveProgress(progress); }, 30000);
+    return () => clearInterval(saveTimerRef.current);
+  }, [progress]);
+  useEffect(() => saveProgress(progress), [progress]);
+  
+  useEffect(() => {
+    const update = () => { if (sceneRef.current) setContainerSize({w:sceneRef.current.offsetWidth, h:sceneRef.current.offsetHeight}); };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen !== 'playing') return;
+    clockRef.current = setInterval(() => {
+      setGameTime(prev => {
+        const m = prev.match(/^(\d+):(\d+)(am|pm)$/);
+        if (!m) return prev;
+        let [,h,min,per] = m; h=+h; min=+min;
+        min++; if(min>=60){min=0; h++;}
+        if(h>12){h=1; per=per==='am'?'pm':'am';}
+        return `${h}:${String(min).padStart(2,'0')}${per}`;
+      });
+    }, 3000);
+    return () => clearInterval(clockRef.current);
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen !== 'playing' || time <= 0) return;
+    timerRef.current = setInterval(() => {
+      setTime(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); if (!completedRef.current) { completedRef.current = true; setScreen('timeup'); } return 0; }
+        return prev - 1;
+      });
+      setStats(s => ({ focus: Math.max(0, s.focus - 0.05), stress: Math.min(100, s.stress + 0.04), energy: Math.max(0, s.energy - 0.04) }));
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [screen, time]);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (screen !== 'playing') return;
+      if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+      if (e.key === 'Escape' && activeWin) closeWin(activeWin);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [screen, activeWin]);
+
+  const addNotif = useCallback((msg, type='info') => {
+    const id = Date.now() + Math.random();
+    setNotifs(p => [...p.slice(-4), {id, message:msg, type}]);
+    audio.playSfx('notification');
+    setTimeout(() => setNotifs(p => p.filter(n=>n.id!==id)), 3200);
+  }, [audio]);
+
+  const startEp = idx => {
+    if (idx > 0 && !progress.completed.includes(idx-1)) { addNotif('COMPLETE PREV EPISODE FIRST','error'); return; }
+    const ep = EPISODES[idx];
+    completedRef.current = false;
+    setEpIdx(idx);
+    setTasks(ep.tasks.map(t=>({...t,done:false})));
+    setTime(ep.time);
+    setStats({focus:80, stress:20, energy:90});
+    setWindows([]); setActiveWin(null); setMinimized([]);
+    setScreen('playing');
+    setGameTime('09:00am');
+    setInventory({ coffee: 3, bag: 5, headset: 2, docs: 7 });
+    addNotif(`EP ${idx+1}: ${ep.title}`,'info');
+    audio.playSfx('success');
+  };
+
+  const openWin = (type, title, Icon) => {
+    audio.playSfx('click');
+    const id = Date.now();
+    setWindows(p => [...p, {id, type, title, icon:Icon}]);
+    setActiveWin(id);
+    setMinimized(p => p.filter(x=>x!==id));
+  };
+  const closeWin = id => { 
+    audio.playSfx('click');
+    setWindows(p => p.filter(w=>w.id!==id)); 
+    if (activeWin === id) setActiveWin(null); 
+  };
+  const minWin = id => { 
+    audio.playSfx('click');
+    setMinimized(p => [...p, id]); 
+    if (activeWin === id) setActiveWin(null); 
+  };
+  const focusWin = id => { 
+    audio.playSfx('click');
+    setActiveWin(id); 
+    setMinimized(p => p.filter(x=>x!==id)); 
+  };
+
+  const handleTaskDragStart = (e, task) => {
+    audio.playSfx('click');
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id);
+    const preview = document.createElement('div');
+    preview.className = 'task-item dragging drag-preview';
+    preview.innerHTML = `<div class="task-icon">${task.type}</div><div><div class="task-name">${task.label}</div><div class="task-desc">${task.desc}</div></div>`;
+    document.body.appendChild(preview);
+    setDragPreview(preview);
+    const updatePreview = (ev) => { if (preview) { preview.style.left = (ev.clientX + 10) + 'px'; preview.style.top = (ev.clientY + 10) + 'px'; } };
+    document.addEventListener('mousemove', updatePreview);
+    e.currentTarget.style.opacity = '0.5';
+  };
+  const handleTaskDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
+    if (dragPreview) { dragPreview.remove(); setDragPreview(null); }
+    setDraggedTask(null);
+    document.removeEventListener('mousemove', () => {});
+  };
+  const handleDropZoneDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+  const handleDropZoneDragLeave = (e) => { e.currentTarget.classList.remove('drag-over'); };
+  const handleDropZoneDrop = (e, zone) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!draggedTask || zone !== 'processed') return;
+    setTasks(prev => {
+      const task = prev.find(t=>t.id===draggedTask.id && !t.done);
+      if (!task) return prev;
+      audio.playSfx('success');
+      addNotif(`${task.label.toUpperCase()} ✓`, 'success');
+      const updated = prev.map(t=>t.id===task.id?{...t,done:true}:t);
+      if (updated.every(t=>t.done) && !completedRef.current) {
+        completedRef.current = true;
+        clearInterval(timerRef.current);
+        setTimeout(() => {
+          setScreen('complete');
+          const ep = EPISODES[epIdx];
+          setProgress(p => ({ completed: p.completed.includes(epIdx) ? p.completed : [...p.completed, epIdx], score: p.score + ep.reward + Math.floor(time/5) }));
+        }, 600);
+      }
+      return updated;
+    });
+    setDraggedTask(null);
+    if (dragPreview) { dragPreview.remove(); setDragPreview(null); }
+  };
+
+  const completeTask = useCallback((type) => {
+    setTasks(prev => {
+      const task = prev.find(t=>t.type===type && !t.done);
+      if (!task) return prev;
+      audio.playSfx('success');
+      addNotif(`${task.label.toUpperCase()} ✓`, 'success');
+      const updated = prev.map(t=>t.id===task.id?{...t,done:true}:t);
+      if (updated.every(t=>t.done) && !completedRef.current) {
+        completedRef.current = true;
+        clearInterval(timerRef.current);
+        setTimeout(() => {
+          setScreen('complete');
+          const ep = EPISODES[epIdx];
+          setProgress(p => ({ completed: p.completed.includes(epIdx) ? p.completed : [...p.completed, epIdx], score: p.score + ep.reward + Math.floor(time/5) }));
+        }, 600);
+      }
+      return updated;
+    });
+  }, [epIdx, time, addNotif, audio]);
+
+  const useInventoryItem = (item) => {
+    audio.playSfx('click');
+    if (inventory[item] <= 0) {
+      audio.playSfx('error');
+      addNotif('OUT OF STOCK', 'error');
+      return;
+    }
+
+    setInventory(prev => ({...prev, [item]: prev[item] - 1}));
+
+    switch(item) {
+      case 'coffee':
+        setStats(s => ({...s, energy:Math.min(100,s.energy+20), focus:Math.min(100,s.focus+10)}));
+        addNotif('☕ COFFEE: +20 ENERGY', 'success');
+        // Check if coffee task exists and complete it
+        const coffeeTask = tasks.find(t => t.type === 'coffee' && !t.done);
+        if (coffeeTask) {
+          setTimeout(() => completeTask('coffee'), 400);
+        }
+        break;
+      case 'bag':
+        const roll = Math.random();
+        if (roll > 0.5) {
+          const orgTask = tasks.find(t => t.type === 'organize' && !t.done);
+          if (orgTask) {
+            completeTask('organize');
+            addNotif('🎒 FOUND STAPLER! Task Done.', 'success');
+          } else {
+            addNotif('🎒 FOUND MINTS: -10 STRESS', 'info');
+            setStats(s => ({...s, stress: Math.max(0, s.stress - 10)}));
+          }
+        } else {
+          addNotif('🎒 FOUND PAPERCLIPS (+Focus)', 'info');
+          setStats(s => ({...s, focus: Math.min(100, s.focus + 15)}));
+        }
+        break;
+      case 'headset':
+        setStats(s => ({...s, stress:Math.max(0,s.stress-30), focus:Math.min(100,s.focus+15)}));
+        addNotif('🎧 HEADSET: Noise Cancelled (-30 Stress)', 'success');
+        break;
+      case 'docs':
+        const undone = tasks.find(t => !t.done);
+        if (undone) {
+          completeTask(undone.type);
+          addNotif('📄 DOCS: Task Auto-Completed!', 'success');
+        } else {
+          addNotif('📄 DOCS: +100 XP (No tasks left)', 'info');
+          setProgress(p => ({...p, score: p.score + 100}));
+        }
+        break;
+      default: break;
+    }
+  };
+
+  const handleOpsClick = (action) => {
+    const messages = { target: 'Mission objectives updated.', shield: 'Security protocols active.', alert: 'Alert acknowledged.', star: `Clearance Level ${epIdx+1} confirmed.` };
+    addNotif(messages[action] || 'Operation logged.', 'info');
+    audio.playSfx('notification');
+  };
+
+  const toggleFullscreen = () => {
+    audio.playSfx('click');
+    const frame = document.querySelector('.game-frame');
+    if (!document.fullscreenElement) { frame?.requestFullscreen?.().catch(() => addNotif('Fullscreen error','error')); }
+    else { document.exitFullscreen?.(); }
+  };
+  useEffect(() => {
+    const handleFullscreenChange = () => { setIsFullscreen(!!document.fullscreenElement); const frame = document.querySelector('.game-frame'); if (document.fullscreenElement) frame?.classList.add('fullscreen'); else frame?.classList.remove('fullscreen'); };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const renderApp = type => {
+    const props = { onComplete: () => completeTask(type), playSfx: audio.playSfx };
+    switch(type) {
+      case 'email':    return <EmailApp {...props}/>;
+      case 'phone':    return <PhoneApp {...props}/>;
+      case 'calendar': return <CalendarApp {...props}/>;
+      case 'network':  return <NetworkApp {...props}/>;
+      case 'code':     return <CodeEditorApp {...props}/>;
+      case 'database': return <DatabaseApp {...props}/>;
+      case 'analytics':return <AnalyticsApp {...props}/>;
+      case 'printer':  return <PrinterApp {...props}/>;
+      case 'security': return <SecurityApp {...props}/>;
+      case 'sheet':    return <SheetApp {...props}/>;
+      case 'organize': return <OrganizeApp {...props}/>;
+      case 'coffee':   return <CoffeeApp {...props}/>;
+      case 'tablet':   return <SignatureApp {...props}/>;
+      case 'doc':      return <ChecklistApp {...props}/>;
+      case 'terminal': return <TerminalApp {...props}/>;
+      case 'chat':     return <ChatApp {...props}/>;
+      case 'render':   return <RenderApp {...props}/>;
+      case 'usb':      return <USBApp {...props}/>;
+      case 'meeting':  return <MeetingApp {...props}/>;
+      // NEW APPS
+      case 'approve':  return <ApproveApp {...props}/>;
+      case 'status':   return <StatusApp {...props}/>;
+      case 'memo':     return <MemoApp {...props}/>;
+      case 'review':   return <ReviewApp {...props}/>;
+      case 'settings': return <SettingsApp {...props}/>;
+      case 'backup':   return <BackupApp {...props}/>;
+      case 'ping':     return <PingApp {...props}/>;
+      default:         return <PlaceholderApp title={type} {...props}/>;
+    }
+  };
+
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const ep = EPISODES[epIdx] || EPISODES[0];
+  const sceneInfo = SCENE_INFO[epIdx] || SCENE_INFO[0];
+  const timeRef = useRef(time);
+  timeRef.current = time;
+
+  if (screen === 'menu') return (
+    <div className="menu-screen">
+      <div className="menu-box">
+        <div className="menu-header">
+          <div className="menu-game-title">OFFICER GAME</div>
+          <div className="menu-subtitle">WORKING</div>
+        </div>
+        <div className="episode-list">
+          {EPISODES.map((e,i) => {
+            const done = progress.completed.includes(i);
+            const locked = i > 0 && !progress.completed.includes(i-1);
+            return <button key={e.id} className={`ep-btn ${done?'done':''}`} disabled={locked} onClick={()=>{audio.playSfx('click');startEp(i);}}>
+              <div className={`ep-num ${done?'done-num':''}`}>{done ? '✓' : locked ? <I.Lock style={{width:'12px',height:'12px',stroke:'#fff'}}/> : e.id}</div>
+              <div className="ep-info"><div className="ep-title">{e.title}</div><div className="ep-desc">{e.desc}</div></div>
+              <div className="ep-meta">
+                <div className={`ep-diff ${e.diff.toLowerCase()}`}>{e.diff}</div>
+                <div className="ep-xp">+{e.reward} XP</div>
+                <div style={{fontSize:'9px', color:'var(--ink-dim)', marginTop:'3px'}}>{Math.floor(e.time/60)}MIN</div>
+              </div>
+            </button>;
+          })}
+        </div>
+        {progress.score > 0 && <div className="score-line">SCORE: {progress.score} XP &nbsp;|&nbsp; {progress.completed.length}/{EPISODES.length} DONE</div>}
+      </div>
+      {/* Audio Controls */}
+      <div className="audio-controls">
+        <button className={`audio-btn ${audio.bgMusicEnabled ? 'active' : ''}`} onClick={audio.toggleBgMusic} title="Toggle Background Music">
+          {audio.bgMusicEnabled ? '🎵' : '🔇'} BGM
+        </button>
+        <button className={`audio-btn ${audio.sfxEnabled ? 'active' : ''}`} onClick={audio.toggleSfx} title="Toggle Sound Effects">
+          {audio.sfxEnabled ? '🔊' : '🔇'} SFX
+        </button>
+        <input type="range" className="volume-slider" min="0" max="1" step="0.1" value={audio.volume} onChange={(e) => audio.changeVolume(e.target.value)} title="Volume"/>
+      </div>
+    </div>
+  );
+
+  return (
+    <Fragment>
+      <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+        <div className="game-main">
+          <div className="sidebar-left">
+            <div className="sidebar-block" style={{padding:0}}>
+              <button className="menu-btn" onClick={()=>{audio.playSfx('click');setScreen('menu')}}><I.Menu style={{width:'14px',height:'14px',stroke:'#fff'}}/> MENU</button>
+            </div>
+            <div className="sidebar-block">
+              <div className="clock-display">{gameTime}</div>
+            </div>
+            <div className="sidebar-block" style={{gap:'5px', alignItems:'stretch'}}>
+              <div className="stat-row"><span className="stat-label">FOC</span><div className="stat-bar"><div className="stat-fill focus-bar" style={{width:`${stats.focus}%`}}/></div></div>
+              <div className="stat-row"><span className="stat-label">STR</span><div className="stat-bar"><div className="stat-fill stress-bar" style={{width:`${stats.stress}%`}}/></div></div>
+              <div className="stat-row"><span className="stat-label">NRG</span><div className="stat-bar"><div className="stat-fill energy-bar" style={{width:`${stats.energy}%`}}/></div></div>
+            </div>
+            <div className="sidebar-block" style={{flex:1}}>
+              <div style={{fontSize:'8px', letterSpacing:'2px', color:'var(--ink-dim)', marginBottom:'10px'}}>INVENTORY</div>
+              <div className="inv-grid">
+                <div className="inv-item" title="Drink Coffee (+Energy) - Completes coffee task!" onClick={() => useInventoryItem('coffee')}>
+                  <I.Coffee style={{stroke:'var(--accent2)'}}/>
+                  <div className="inv-badge">{inventory.coffee}</div>
+                </div>
+                <div className="inv-item" title="Work Bag (Random Item)" onClick={() => useInventoryItem('bag')}>
+                  <I.Bag style={{stroke:'var(--accent4)'}}/>
+                  <div className="inv-badge">{inventory.bag}</div>
+                </div>
+                <div className="inv-item" title="Headset (-Stress)" onClick={() => useInventoryItem('headset')}>
+                  <I.Headset style={{stroke:'var(--accent3)'}}/>
+                  <div className="inv-badge">{inventory.headset}</div>
+                </div>
+                <div className="inv-item" title="Documents (Auto-Task)" onClick={() => useInventoryItem('docs')}>
+                  <I.Doc style={{stroke:'var(--ink)'}}/>
+                  <div className="inv-badge">{inventory.docs}</div>
+                </div>
+              </div>
+            </div>
+            <div className="sidebar-block">
+              <div className={`clock-display ${time < 60 ? 'timer-urgent' : ''}`} style={{fontSize:'14px'}}>{fmt(time)}</div>
+            </div>
+          </div>
+
+          <div className="scene-area">
+            <div className="scene-title">{sceneInfo.title}</div>
+            <div ref={sceneRef} className="scene-viewport">
+              <SceneArt epIdx={epIdx}/>
+              <div className="clearance-badge">CLEARANCE L{epIdx+1}</div>
+              <div className="threat-indicator"><div className="threat-dot"></div><span>THREAT: LOW</span></div>
+              <div className="desktop-icons">
+                {DESK_ICONS.map(btn=>{
+                  const Icon = btn.i;
+                  const hasPending = tasks.some(t=>t.type===btn.t && !t.done);
+                  return (
+                    <button key={btn.t} className="desk-icon" onClick={(e) => { e.stopPropagation(); openWin(btn.t, btn.l, btn.i); }} style={{pointerEvents:'auto'}}>
+                      <div className="desk-icon-img"><Icon style={{stroke: hasPending?'var(--accent2)':'rgba(255,255,255,0.3)'}}/></div>
+                      <span className="desk-icon-label" style={{color: hasPending?'var(--accent2)':'#888'}}>{btn.l}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {windows.filter(w=>!minimized.includes(w.id)).map(w=>(
+                <DraggableWindow key={w.id} id={w.id} title={w.title} icon={w.icon} isActive={activeWin===w.id} onClose={closeWin} onMinimize={minWin} onFocus={focusWin} containerSize={containerSize} playSfx={audio.playSfx}>
+                  {renderApp(w.type)}
+                </DraggableWindow>
+              ))}
+              {minimized.length > 0 && (
+                <div className="minimized-bar">
+                  {minimized.map(mid=>{ const w = windows.find(x=>x.id===mid); if (!w) return null; return <button key={mid} className="minimized-btn" onClick={()=>{audio.playSfx('click');focusWin(mid);}}>{w.title}</button>; })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="sidebar-right">
+            <div className="ops-dashboard">
+              <div className="ops-label">OPERATIONS</div>
+              <OpsDashboard epIdx={epIdx} onOpsClick={handleOpsClick} playSfx={audio.playSfx}/>
+            </div>
+            <div className="tasks-block">
+              <div className="tasks-label"><span>OBJECTIVES</span><span style={{fontSize:'7px',color:'var(--ink-dim)'}}>{tasks.filter(t=>!t.done).length} PENDING</span></div>
+              {tasks.map(t=>{
+                const Ic = ICON_MAP[t.type] || I.Doc;
+                return <div key={t.id} className={`task-item ${t.done?'done':''}`} style={{position:'relative'}} draggable={!t.done} onDragStart={(e) => handleTaskDragStart(e, t)} onDragEnd={handleTaskDragEnd} onClick={()=>{if(!t.done){audio.playSfx('click');openWin(t.type, t.label, Ic);}}}>
+                  <div className="task-icon"><Ic style={{width:'16px',height:'16px',stroke:t.done?'var(--accent3)':'var(--accent2)'}}/></div>
+                  <div><div className="task-name" style={{color:t.done?'var(--accent3)':'var(--ink)'}}>{t.label}</div><div className="task-desc">{t.desc}</div></div>
+                  {t.done && <div className="task-check">✓</div>}
+                </div>;
+              })}
+              <div className="task-dropzone" onDragOver={handleDropZoneDragOver} onDragLeave={handleDropZoneDragLeave} onDrop={(e) => handleDropZoneDrop(e, 'processed')}>
+                <div style={{fontSize:'8px',color:'var(--ink-dim)',textAlign:'center'}}>{tasks.filter(t=>t.done).length > 0 ? `${tasks.filter(t=>t.done).length} COMPLETED` : 'DRAG TASKS HERE'}</div>
+              </div>
+            </div>
+            <div className="status-panel-block">
+              <button className="action-btn primary" onClick={()=>{ const undone = tasks.find(t=>!t.done); if (undone) { const Ic=ICON_MAP[undone.type]||I.Doc; openWin(undone.type, undone.label, Ic); } else {audio.playSfx('success');addNotif('ALL TASKS DONE!','success');} }}>▶ NEXT TASK</button>
+              <button className="action-btn" onClick={()=>{ audio.playSfx('click'); setStats(s=>({...s, energy:Math.min(100,s.energy+8), focus:Math.min(100,s.focus+5), stress:Math.max(0,s.stress-5)})); addNotif('BREAK: +8 ENERGY','info'); }}><I.Coffee style={{width:'12px',height:'12px',stroke:'currentColor'}}/> TAKE BREAK</button>
+              <button className="action-btn" onClick={()=>{ audio.playSfx('click'); setStats(s=>({...s, stress:Math.max(0,s.stress-10)})); addNotif('DEEP BREATH: -10 STRESS','info'); }}><I.Heart style={{width:'12px',height:'12px',stroke:'currentColor',fill:'none'}}/> DE-STRESS</button>
+            </div>
+          </div>
+        </div>
+        <div className="text-box">
+          <div className="text-desc">{sceneInfo.desc.map((word,i)=> i===1 ? <Fragment key={i}><strong>{word}</strong> </Fragment> : <Fragment key={i}>{word} </Fragment>)}{tasks.some(t=>!t.done) && <span style={{color:'var(--ink-dim)'}}> Click a task or icon to open it, or drag to complete.</span>}</div>
+          <div className="text-action">{tasks.every(t=>t.done) ? '▶ ALL TASKS COMPLETE' : `▶ ${sceneInfo.action}`}<span className="cursor"> _</span></div>
+        </div>
+      </div>
+      <Notifs notifs={notifs} onRemove={id=>{audio.playSfx('click');setNotifs(p=>p.filter(n=>n.id!==id));}} playSfx={audio.playSfx}/>
+      <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Exit Fullscreen (F11)' : 'Enter Fullscreen (F11)'}>{isFullscreen ? '◱' : '⛶'} {isFullscreen ? 'WINDOWED' : 'FULLSCREEN'}</button>
+      
+      {/* Global Audio Controls - Always visible during gameplay */}
+      {screen === 'playing' && (
+        <div className="audio-controls">
+          <button className={`audio-btn ${audio.bgMusicEnabled ? 'active' : ''}`} onClick={audio.toggleBgMusic} title="Toggle Background Music">
+            {audio.bgMusicEnabled ? '🎵' : '🔇'} BGM
+          </button>
+          <button className={`audio-btn ${audio.sfxEnabled ? 'active' : ''}`} onClick={audio.toggleSfx} title="Toggle Sound Effects">
+            {audio.sfxEnabled ? '🔊' : '🔇'} SFX
+          </button>
+          <input type="range" className="volume-slider" min="0" max="1" step="0.1" value={audio.volume} onChange={(e) => audio.changeVolume(e.target.value)} title="Volume"/>
+        </div>
+      )}
+      
+      {(screen === 'complete' || screen === 'timeup') && (
+        <div className="complete-overlay">
+          <div className="complete-box">
+            <div className="complete-title" style={{color: screen==='timeup'?'var(--accent)':'var(--accent2)'}}>{screen==='timeup' ? '⏰ TIME EXPIRED' : '✓ EPISODE CLEAR'}</div>
+            <div className="complete-row"><span>EPISODE</span><span style={{color:'var(--accent2)'}}>{ep.title}</span></div>
+            <div className="complete-row"><span>BASE REWARD</span><span style={{color:'var(--accent3)'}}>+{ep.reward} XP</span></div>
+            <div className="complete-row"><span>TIME BONUS</span><span style={{color:'var(--accent3)'}}>+{Math.floor(timeRef.current/5)} XP</span></div>
+            <div className="complete-row" style={{fontFamily:"'Press Start 2P'", fontSize:'11px', borderBottom:'none', marginTop:'10px'}}><span>TOTAL</span><span style={{color:'var(--accent2)'}}>{ep.reward + Math.floor(timeRef.current/5)} XP</span></div>
+            <div className="complete-btns">
+              <button className="complete-btn outline" onClick={()=>{audio.playSfx('click');setScreen('menu');}}>MENU</button>
+              <button className="complete-btn" onClick={()=>{audio.playSfx('click');startEp(epIdx);}}>RETRY</button>
+              {screen==='complete' && epIdx < EPISODES.length-1 && (<button className="complete-btn" style={{background:'var(--accent3)'}} onClick={()=>{audio.playSfx('success');startEp(epIdx+1);}}>NEXT →</button>)}
+            </div>
+          </div>
+        </div>
+      )}
+    </Fragment>
+  );
+};
+
+// Placeholder apps
+const NetworkApp = ({ onComplete, playSfx }) => { const [connected, setConnected] = useState(false); const connect = () => { playSfx('click'); setConnected(true); setTimeout(onComplete, 800); }; return <div className="app-inner"><div className="app-h"><I.Network style={{width:'14px',height:'14px'}}/> NETWORK</div><button className="app-btn ok" onClick={connect} disabled={connected}>{connected ? 'CONNECTED ✓' : 'CONNECT'}</button></div>; };
+const CodeEditorApp = ({ onComplete, playSfx }) => { const [code, setCode] = useState(`function processData(data) {\n  const result = data.map(item => {\n    return item.value * 2;\n  });\n  // BUG: missing return\n}`); const [fixed, setFixed] = useState(false); const test = () => { playSfx('click'); if (code.includes('return result')) { playSfx('success'); setFixed(true); setTimeout(onComplete, 500); } else { playSfx('error'); } }; return <div style={{display:'flex', flexDirection:'column', height:'100%'}}><div style={{background:'var(--card)', padding:'6px 10px', display:'flex', justifyContent:'space-between'}}><span style={{fontFamily:"'Press Start 2P'", fontSize:'8px', color:'var(--accent2)'}}>BUGFIX.JS</span><button className="app-btn ok" style={{padding:'4px 10px', fontSize:'8px', marginTop:0}} onClick={test}>RUN TEST</button></div><textarea value={code} onChange={e=>setCode(e.target.value)} className="app-input" style={{flex:1, fontFamily:"'Share Tech Mono'", fontSize:'10px', lineHeight:'1.7', padding:'10px', border:'none', borderTop:'1px solid #2a3a5c'}}/></div>; };
+const DatabaseApp = ({ onComplete, playSfx }) => { const [results, setResults] = useState(null); const [query, setQuery] = useState('SELECT * FROM employees\nWHERE dept = "Engineering"'); const run = () => { playSfx('click'); setResults([{id:1,name:'J. DOE',role:'DEV'},{id:2,name:'A. SMITH',role:'DESIGN'}]); setTimeout(onComplete, 600); }; return <div className="app-inner"><div className="app-h"><I.Database style={{width:'14px',height:'14px'}}/> SQL</div><textarea className="app-input" value={query} onChange={e=>setQuery(e.target.value)} style={{height:'72px', marginBottom:'8px', fontSize:'10px'}}/><button className="app-btn ok" onClick={run}>EXECUTE</button>{results && <div style={{marginTop:'10px', fontSize:'10px'}}>{results.map(r=><div key={r.id}>{r.name} - {r.role}</div>)}</div>}</div>; };
+const AnalyticsApp = ({ onComplete, playSfx }) => { const [gen, setGen] = useState(false); const generate = () => { playSfx('click'); setGen(true); setTimeout(onComplete, 1200); }; return <div className="app-inner"><div className="app-h"><I.Analytics style={{width:'14px',height:'14px'}}/> ANALYTICS</div><button className="app-btn ok" onClick={generate} disabled={gen}>{gen?'GENERATED ✓':'GENERATE REPORT'}</button></div>; };
+const PrinterApp = ({ onComplete, playSfx }) => { const [jobs, setJobs] = useState([{id:1, name:'Q3_REPORT.PDF', pages:24, status:'pending'}]); useEffect(() => { if (!jobs.length) return; const t = setInterval(() => { setJobs(prev => { if (!prev.length) return prev; if (prev[0].status === 'pending') return prev.map((j,i)=>i===0?{...j,status:'printing'}:j); const next = prev.slice(1); if (next.length === 0) { playSfx('success'); setTimeout(onComplete, 400); } return next; }); }, 1800); return () => clearInterval(t); }, []); return <div className="app-inner"><div className="app-h"><I.Printer style={{width:'14px',height:'14px'}}/> PRINT</div>{jobs.map(j=><div key={j.id} style={{border:'1px solid #2a3a5c', padding:'10px', marginBottom:'8px'}}><span>{j.name}</span> <span style={{fontSize:'9px', color: j.status==='printing'?'var(--accent2)':'var(--ink-dim)'}}>{j.status.toUpperCase()}</span></div>)}</div>; };
+const SecurityApp = ({ onComplete, playSfx }) => { useEffect(() => { const t=setTimeout(()=>{playSfx('success');onComplete();},3000); return ()=>clearTimeout(t); }, []); return <div className="app-inner"><div className="app-h"><I.Security style={{width:'14px',height:'14px'}}/> SECURITY</div><div style={{padding:'20px', textAlign:'center', color:'var(--accent3)'}}>SCANNING...</div></div>; };
+const PlaceholderApp = ({ title, onComplete, playSfx }) => { useEffect(() => { const t=setTimeout(()=>{playSfx('success');onComplete();},2200); return ()=>clearTimeout(t); }, []); return <div className="app-inner" style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'100%', gap:'14px'}}><div style={{fontFamily:"'Press Start 2P'", fontSize:'10px', letterSpacing:'2px', color:'var(--accent2)'}}>{title.toUpperCase()}</div><div className="dot-wave"><span/><span/><span/></div></div>; };
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  render() { if (this.state.hasError) { return <div className="error-fallback"><button onClick={() => window.location.reload()}>RELOAD</button></div>; } return this.props.children; }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ErrorBoundary>
+    <div className="game-outer">
+      <div className="game-frame">
+        <div className="titlebar">
+          <span className="titlebar-name">A DAY IN THE LIFE AS AN OFFICER</span>
+          <div className="titlebar-dots"><div className="titlebar-dot dot-r"/><div className="titlebar-dot dot-y"/><div className="titlebar-dot dot-g"/></div>
+        </div>
+        <div style={{flex:1, minHeight:0, display:'flex', flexDirection:'column', overflow:'hidden'}}>
+          <Game/>
+        </div>
+      </div>
+    </div>
+  </ErrorBoundary>
+);
+</script>
+</body>
+</html>
